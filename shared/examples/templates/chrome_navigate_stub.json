@@ -1,0 +1,15 @@
+{
+  "name": "example_chrome_navigate",
+  "domain": "example.com",
+  "comment": "Chrome template skeleton — requires Runtime Chrome.enabled",
+  "builder": {
+    "type": "Chrome",
+    "url_tpl": "https://example.com/"
+  },
+  "procedures": [
+    {
+      "_type": "one.rewind.nio.tpl.LoadUrlAction",
+      "url": "https://example.com/"
+    }
+  ]
+}

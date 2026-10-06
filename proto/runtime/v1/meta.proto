@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package runtime.v1;
+
+import "common/v1/types.proto";
+
+option go_package = "piper_agent/runtime/pkg/pb/runtime/v1;runtimev1";
+
+service RuntimeMeta {
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
+  rpc ListProxies(ListProxiesRequest) returns (ListProxiesResponse);
+}
+
+message ListTemplatesRequest {
+  string request_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+  string query = 4;
+}
+
+message ListTemplatesResponse {
+  repeated common.v1.TemplateDoc templates = 1;
+  int64 total = 2;
+}
+
+message GetTemplateRequest {
+  string request_id = 1;
+  string template_id = 2;
+}
+
+message GetTemplateResponse {
+  common.v1.TemplateDoc template = 1;
+}
+
+message ProxyDoc {
+  string id = 1;
+  string name = 2;
+  string domain = 3;
+  string status = 4;
+}
+
+message ListProxiesRequest {
+  string request_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+  string status = 4;
+}
+
+message ListProxiesResponse {
+  repeated ProxyDoc proxies = 1;
+  int64 total = 2;
+}

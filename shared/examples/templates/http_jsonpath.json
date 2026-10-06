@@ -1,0 +1,56 @@
+{
+  "id": "http_jsonpath",
+  "name": "example_http_jsonpath",
+  "domain": "api.example.com",
+  "comment": "httpbin.org/json — extracts slideshow metadata and first slides (runner_get_data → docs.articles)",
+  "builder": {
+    "type": "Http",
+    "url_tpl": "https://httpbin.org/json",
+    "http_method": "GET"
+  },
+  "procedures": [
+    {
+      "_type": "one.rewind.nio.tpl.Mapper",
+      "id": "map_slideshow",
+      "type": "Index",
+      "ref_id": "articles",
+      "fields": {
+        "slideshow_title": {
+          "name": "slideshow_title",
+          "method": "JSONPath",
+          "path": "$.slideshow.title"
+        },
+        "author": {
+          "name": "author",
+          "method": "JSONPath",
+          "path": "$.slideshow.author"
+        },
+        "date": {
+          "name": "date",
+          "method": "JSONPath",
+          "path": "$.slideshow.date"
+        },
+        "slide1_title": {
+          "name": "slide1_title",
+          "method": "JSONPath",
+          "path": "$.slideshow.slides[0].title"
+        },
+        "slide1_type": {
+          "name": "slide1_type",
+          "method": "JSONPath",
+          "path": "$.slideshow.slides[0].type"
+        },
+        "slide2_title": {
+          "name": "slide2_title",
+          "method": "JSONPath",
+          "path": "$.slideshow.slides[1].title"
+        },
+        "slides_json": {
+          "name": "slides_json",
+          "method": "JSONPath",
+          "path": "$.slideshow.slides"
+        }
+      }
+    }
+  ]
+}

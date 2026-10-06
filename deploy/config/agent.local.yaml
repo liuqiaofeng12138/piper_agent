@@ -1,0 +1,19 @@
+# Piper Agent 本地配置（LLM + Runtime 地址均在此文件，无需环境变量）
+
+runtime:
+  # 用 127.0.0.1，避免 Windows 上 localhost→::1 而 Runtime 只监听 IPv4
+  address: "127.0.0.1:50051"
+
+llm:
+  provider: openai
+  model: deepseek-flash
+  # OpenAI：https://platform.openai.com/api-keys 创建的 API Key（sk-...）
+  # OpenAI 兼容网关：同时填写 base_url 与网关提供的 key
+  api_key: "sk-8372c62e292c429fac216cad6351ce7e"
+  base_url: "https://api.deepseek.com"
+
+harness:
+  max_steps: 20
+  require_validate_before_run: true
+  max_runs_per_session: 10
+  audit_log: "../../logs/agent_audit.jsonl"

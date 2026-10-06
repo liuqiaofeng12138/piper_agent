@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package runtime.v1;
+
+import "common/v1/types.proto";
+
+option go_package = "piper_agent/runtime/pkg/pb/runtime/v1;runtimev1";
+
+service RuntimeTemplate {
+  rpc ValidateTemplate(ValidateTemplateRequest) returns (ValidateTemplateResponse);
+  rpc UpsertTemplate(UpsertTemplateRequest) returns (UpsertTemplateResponse);
+}
+
+message ValidateTemplateRequest {
+  string request_id = 1;
+  common.v1.TemplateDoc template = 2;
+  string template_id = 3;
+  common.v1.Vars vars = 4;
+}
+
+message ValidateTemplateResponse {
+  bool ok = 1;
+  repeated common.v1.Diagnostic diagnostics = 2;
+}
+
+message UpsertTemplateRequest {
+  string request_id = 1;
+  common.v1.TemplateDoc template = 2;
+}
+
+message UpsertTemplateResponse {
+  string template_id = 1;
+}

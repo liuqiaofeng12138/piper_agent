@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "piper_agent/runtime/pkg/pb/common/v1;commonv1";
+
+// TemplateDoc mirrors Piper meta `templates` row JSON (builder + procedures).
+message TemplateDoc {
+  string id = 1;
+  string name = 2;
+  string domain = 3;
+  bytes json_payload = 4;
+}
+
+message Vars {
+  map<string, string> values = 1;
+}
+
+enum RunPhase {
+  RUN_PHASE_UNSPECIFIED = 0;
+  RUN_PHASE_VALIDATED = 1;
+  RUN_PHASE_RUNNING = 2;
+  RUN_PHASE_SUCCEEDED = 3;
+  RUN_PHASE_FAILED = 4;
+  RUN_PHASE_CANCELLED = 5;
+}
+
+message Diagnostic {
+  string code = 1;
+  string message = 2;
+  string path = 3;
+}
+
+message RunStatus {
+  string run_id = 1;
+  string session_id = 2;
+  RunPhase phase = 3;
+  string token_id = 4;
+  repeated Diagnostic diagnostics = 5;
+}

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package runtime.v1;
+
+option go_package = "piper_agent/runtime/pkg/pb/runtime/v1;runtimev1";
+
+service RuntimeData {
+  rpc GetTokenData(GetTokenDataRequest) returns (GetTokenDataResponse);
+}
+
+message GetTokenDataRequest {
+  string request_id = 1;
+  string token_id = 2;
+}
+
+message GetTokenDataResponse {
+  string token_id = 1;
+  bytes payload_json = 2;
+}

@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package runtime.v1;
+
+import "common/v1/types.proto";
+
+option go_package = "piper_agent/runtime/pkg/pb/runtime/v1;runtimev1";
+
+service RuntimeExecute {
+  rpc RunTemplate(RunTemplateRequest) returns (RunTemplateResponse);
+  rpc CancelRun(CancelRunRequest) returns (CancelRunResponse);
+  rpc SubscribeRun(SubscribeRunRequest) returns (stream RunEvent);
+}
+
+message RunTemplateRequest {
+  string request_id = 1;
+  string session_id = 2;
+  string idempotency_key = 3;
+  string template_id = 4;
+  common.v1.Vars vars = 5;
+  string proxy_id = 6;
+  string engine = 7; // "http" | "chrome"
+}
+
+message RunTemplateResponse {
+  string run_id = 1;
+  common.v1.RunStatus status = 2;
+}
+
+message CancelRunRequest {
+  string request_id = 1;
+  string run_id = 2;
+}
+
+message CancelRunResponse {}
+
+message SubscribeRunRequest {
+  string request_id = 1;
+  string run_id = 2;
+}
+
+message RunEvent {
+  common.v1.RunStatus status = 1;
+  string message = 2;
+}

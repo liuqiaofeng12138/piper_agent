@@ -1,0 +1,19 @@
+# Go binaries
+/runtime/piper-runtime.exe
+/engine/pipergo.exe
+/engine/pipergo_test.exe
+*.exe
+
+# Python
+/agents/.venv/
+/agents/**/__pycache__/
+/agents/**/*.egg-info/
+/agents/.pytest_cache/
+
+# Local secrets & logs
+/deploy/config/agent.secrets.yaml
+/logs/
+
+# IDE
+.idea/
+.vscode/

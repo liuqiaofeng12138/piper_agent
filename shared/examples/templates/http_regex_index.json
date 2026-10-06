@@ -1,0 +1,25 @@
+{
+  "name": "example_http_regex",
+  "domain": "example.com",
+  "comment": "Fetch page and extract title via Regex Index mapper",
+  "builder": {
+    "type": "Http",
+    "url_tpl": "https://example.com/",
+    "http_method": "GET"
+  },
+  "procedures": [
+    {
+      "_type": "one.rewind.nio.tpl.Mapper",
+      "id": "map_title",
+      "type": "Index",
+      "ref_id": "articles",
+      "fields": {
+        "title": {
+          "name": "title",
+          "method": "Regex",
+          "path": "(?<T><title[^>]*>([^<]+)</title>)"
+        }
+      }
+    }
+  ]
+}

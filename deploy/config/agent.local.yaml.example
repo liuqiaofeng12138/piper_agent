@@ -1,0 +1,19 @@
+# 复制为 agent.local.yaml 后填写（勿将含真实 key 的文件提交到 Git）
+#
+# llm.api_key 是什么？
+# - 使用 OpenAI 官方模型：在 https://platform.openai.com/api-keys 创建的 Secret Key（形如 sk-...）
+# - 使用国产/自建 OpenAI 兼容服务：填该服务提供的 API Key，并设置 llm.base_url
+
+runtime:
+  address: "127.0.0.1:50051"
+
+llm:
+  provider: openai
+  model: gpt-4o
+  api_key: ""
+  # base_url: "https://api.openai.com/v1"
+  # base_url: "https://api.deepseek.com"
+
+harness:
+  max_steps: 20
+  require_validate_before_run: true

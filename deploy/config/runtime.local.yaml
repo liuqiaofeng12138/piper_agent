@@ -1,0 +1,8 @@
+# Piper Agent Runtime — local dev
+listen: ":50051"
+piper_go_config: "../../engine/etc/pipergo-api.yaml"  # resolved relative to this file
+log_level: info
+max_concurrent_runs: 4
+mock: false
+relax_deps: true
+skip_storage_wait: false
