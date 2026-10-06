@@ -9,7 +9,7 @@
 /agents/.pytest_cache/
 
 # Local secrets & logs
-/deploy/config/agent.secrets.yaml
+/deploy/config/local.yaml
 /logs/
 
 # IDE

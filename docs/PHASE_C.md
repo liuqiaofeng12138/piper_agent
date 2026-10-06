@@ -16,19 +16,19 @@
 ## 使用
 
 ```powershell
-# 1. 编辑 deploy/config/agent.local.yaml，填写 llm.api_key（OpenAI 或兼容服务的 Key）
+# 1. 编辑 deploy/config/local.yaml，填写 llm.api_key（OpenAI 或兼容服务的 Key）
 # 2. 启动 Runtime
 cd piper_agent\runtime
-.\piper-runtime.exe -f ..\deploy\config\runtime.local.yaml
+.\piper-runtime.exe -f ..\deploy\config\local.yaml
 
-# 3. LLM chat（Runtime 地址已在 agent.local.yaml 的 runtime.address）
+# 3. LLM chat（Runtime 地址在同文件 runtime.address）
 cd piper_agent\agents
 pip install -e ".[llm]"
 piper-agent doctor   # 先确认 Runtime 可达
 piper-agent chat
 ```
 
-`llm.api_key` 说明：在 [OpenAI API Keys](https://platform.openai.com/api-keys) 创建的密钥（`sk-...`）；若用 DeepSeek 等 OpenAI 兼容 API，同时设置 `llm.base_url` 与对应 key。也可复制 `agent.secrets.yaml.example` → `agent.secrets.yaml` 仅存放密钥（已 gitignore）。
+`llm.api_key` 说明：在 [OpenAI API Keys](https://platform.openai.com/api-keys) 创建的密钥（`sk-...`）；若用 DeepSeek 等 OpenAI 兼容 API，同时设置 `llm.base_url` 与对应 key。含密钥的 `local.yaml` 已 gitignore。
 
 自然语言示例：「搜索类似 json 采集模版，校验并保存，然后抓取 httpbin 的 author 字段」
 

@@ -1,0 +1,59 @@
+# 复制为 local.yaml 后填写 llm.api_key（含密钥的 local.yaml 勿提交 Git）
+
+listen: ":50051"
+log_level: info
+max_concurrent_runs: 4
+mock: false
+relax_deps: true
+skip_storage_wait: false
+
+engine:
+  Name: piper_go-api
+  Host: 0.0.0.0
+  Port: 8888
+  WebAPI:
+    noAuth: true
+    notification: false
+    requireDeps: true
+    requiredContainers:
+      - elasticsearch
+      - minio
+      - prometheus
+    depsMaxWaitSeconds: 120
+    skipStorageWait: false
+    storageWaitEveryMs: 5000
+  ES:
+    host: 127.0.0.1
+    port: 9200
+    username: elastic
+    password: mG0pL3aL
+  S3:
+    endpointUrl: http://127.0.0.1:9000
+    accessKey: admin
+    secretKey: jQ2@xF0@
+  H2:
+    path: ../../engine/etc/db/raw_meta.db
+  Requester:
+    connectTimeout: 80000
+    readTimeout: 120000
+    tokenTimeout: 120000
+    requestPerSecondLimit: 20
+  Chrome:
+    enabled: true
+    headless: false
+    agentCount: 1
+
+runtime:
+  address: "127.0.0.1:50051"
+
+llm:
+  provider: openai
+  model: gpt-4o
+  api_key: ""
+  # base_url: "https://api.deepseek.com"
+
+harness:
+  max_steps: 20
+  require_validate_before_run: true
+  max_runs_per_session: 10
+  audit_log: "../../logs/agent_audit.jsonl"

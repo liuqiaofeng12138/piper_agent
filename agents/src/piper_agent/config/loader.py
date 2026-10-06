@@ -34,7 +34,7 @@ class AgentConfig:
 
 
 def default_config_path() -> Path:
-    return Path(__file__).resolve().parents[4] / "deploy" / "config" / "agent.local.yaml"
+    return Path(__file__).resolve().parents[4] / "deploy" / "config" / "local.yaml"
 
 
 def load_agent_config(path: str | Path | None = None) -> AgentConfig:
@@ -45,13 +45,6 @@ def load_agent_config(path: str | Path | None = None) -> AgentConfig:
     if config_file.is_file():
         raw: dict[str, Any] = yaml.safe_load(config_file.read_text(encoding="utf-8")) or {}
         _apply_raw(cfg, raw)
-        secrets = config_file.parent / "agent.secrets.yaml"
-        if secrets.is_file():
-            secret_raw: dict[str, Any] = yaml.safe_load(secrets.read_text(encoding="utf-8")) or {}
-            if secret_raw.get("llm"):
-                merged = dict(raw)
-                merged["llm"] = {**(raw.get("llm") or {}), **secret_raw["llm"]}
-                _apply_raw(cfg, merged)
     elif path:
         raise FileNotFoundError(f"config not found: {config_file}")
 

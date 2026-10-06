@@ -10,7 +10,7 @@
 | [internal/grpcserver/](internal/grpcserver/) | gRPC 服务注册、拦截器（auth、logging、otel） |
 | [internal/harness/](internal/harness/) | **执行侧 Harness**：Run 生命周期、步骤编排、与 Python Harness 的 run_id 对齐 |
 | [internal/executor/](internal/executor/) | 调用 `piper_go`：`tpl.*`、`distributor.Engine`、meta Store |
-| [internal/adapter/](internal/adapter/) | 配置映射、`pipergo-api.yaml` → Runtime 依赖注入 |
+| [internal/config/](internal/config/) | 解析 `deploy/config/local.yaml`（含 `engine:` 段） |
 | [pkg/pb/](pkg/pb/) | `protoc` 生成的 Go stub（勿手改） |
 | [pkg/runtime/](pkg/runtime/) | 对外可复用的 Runtime SDK（其他 Go 服务嵌入） |
 

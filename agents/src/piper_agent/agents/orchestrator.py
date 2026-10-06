@@ -15,7 +15,7 @@ def create_loop(config_path: str | None, runtime_addr: str | None) -> tuple[Agen
         cfg.runtime_address = runtime_addr
     api_key = cfg.llm.api_key
     if not api_key:
-        hint = cfg.config_path or "deploy/config/agent.local.yaml"
+        hint = cfg.config_path or "deploy/config/local.yaml"
         raise RuntimeError(
             f"请在配置文件中设置 llm.api_key（OpenAI 或兼容服务的 API Key）: {hint}"
         )

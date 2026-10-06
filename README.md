@@ -31,13 +31,14 @@
 
 ## 本地联调
 
-1. 编辑 [deploy/config/agent.local.yaml](deploy/config/agent.local.yaml)：`runtime.address`、`llm.api_key`（OpenAI 或兼容 API 的 Key，见 [Phase C](docs/PHASE_C.md)）。
+1. 复制 [deploy/config/local.yaml.example](deploy/config/local.yaml.example) 为 `local.yaml`，填写 `llm.api_key`（见 [Phase C](docs/PHASE_C.md)）。
 2. 编译并启动 Runtime（需 ES/S3 等，见 [Phase B](docs/PHASE_B.md)）：
    ```powershell
    cd runtime
    go build -o piper-runtime.exe ./cmd/piper-runtime
-   .\piper-runtime.exe -f ..\deploy\config\runtime.local.yaml
+   .\piper-runtime.exe -f ..\deploy\config\local.yaml
    ```
-3. Agent：`cd agents && pip install -e ".[llm]" && piper-agent chat`（或 `piper-agent repl`）
+   默认 `-f` 即 `../deploy/config/local.yaml`，在 `runtime` 目录下也可省略。
+3. Agent：`cd agents && pip install -e ".[llm]" && piper-agent chat`（同样读取 `local.yaml`）
 
-无需设置 `OPENAI_API_KEY` 等环境变量；可选 `agent.secrets.yaml` 单独存密钥。
+无需设置 `OPENAI_API_KEY` 等环境变量。

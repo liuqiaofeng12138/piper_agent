@@ -1,8 +1,8 @@
 # engine（Piper 采集内核）
 
-本目录是 **piper_agent** 的执行内核（Go 模块名 `piper_go`）。由 [runtime/](../runtime/) 通过 `replace piper_go => ../engine` 引用；`piper-runtime` 启动时加载 [etc/pipergo-api.yaml](etc/pipergo-api.yaml)，调用 `pkg/agentruntime` 完成模版校验、Token 调度、Chrome/HTTP 采集与 ES/S3 持久化。
+本目录是 **piper_agent** 的执行内核（Go 模块名 `piper_go`）。由 [runtime/](../runtime/) 通过 `replace piper_go => ../engine` 引用；`piper-runtime` 从 [deploy/config/local.yaml](../deploy/config/local.yaml) 的 **`engine:`** 段加载 ES/S3/meta/Chrome 等设置，并调用 `pkg/agentruntime` 完成采集。
 
-原独立 REST 后端（`pipergo.go`、`internal/handler` 等）已移除，Agent 场景只保留库形态。
+原独立 REST 后端与 `etc/pipergo-api.yaml` 已移除；配置与 Agent 合并在 `deploy/config/local.yaml`。
 
 ## 目录
 
@@ -14,10 +14,8 @@
 | [pkg/persistence/](pkg/persistence/) | ES/S3 写入与查询 |
 | [pkg/chrome/](pkg/chrome/) | Chrome Agent 池 |
 | [pkg/db/](pkg/db/) | meta SQLite、ES 客户端 |
-| [internal/bootstrap/](internal/bootstrap/) | 与 Runtime 共用的启动编排 |
-| [internal/config/](internal/config/) | YAML 配置结构 |
-| [internal/svc/](internal/svc/) | 运行时依赖容器 |
-| [etc/pipergo-api.yaml](etc/pipergo-api.yaml) | ES/S3/H2/Chrome 等依赖配置 |
+| [internal/bootstrap/](internal/bootstrap/) | 启动编排 |
+| [etc/db/](etc/db/) | 本地 meta SQLite 与 `agents_info.json`（路径由 `local.yaml` 中 `engine.H2.path` 指定） |
 
 ## 本地验证
 

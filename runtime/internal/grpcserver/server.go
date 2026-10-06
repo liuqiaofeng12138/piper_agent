@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"path/filepath"
 
 	"piper_agent/runtime/internal/config"
 	"piper_go/pkg/agentruntime"
@@ -30,11 +31,12 @@ func ListenAndServe(cfg *config.Config) error {
 		return srv.Serve(lis)
 	}
 
-	if cfg.PiperGoConfig == "" {
-		log.Fatal("piper_go_config is required when mock=false")
+	if len(cfg.EngineYAML()) == 0 {
+		log.Fatal("engine: section is required in config when mock=false")
 	}
+	configDir := filepath.Dir(cfg.ConfigPath)
 	ctx := context.Background()
-	svc, err := agentruntime.Bootstrap(ctx, cfg.PiperGoConfig, agentruntime.Options{
+	svc, err := agentruntime.BootstrapFromYAML(ctx, cfg.EngineYAML(), configDir, agentruntime.Options{
 		RelaxDeps:       cfg.RelaxDeps,
 		SkipStorageWait: cfg.SkipStorageWait,
 	})

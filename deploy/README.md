@@ -2,15 +2,14 @@
 
 本地与容器部署。
 
-## 文件（规划）
+## 配置
 
 | 文件 | 说明 |
 |------|------|
-| `docker-compose.agent.yaml` | runtime + agents CLI 容器；依赖 ES/S3 可指向现有 `docker/piper_dev.yaml` |
-| `config/runtime.local.yaml` | gRPC 监听、`engine/etc/pipergo-api.yaml` 路径 |
-| `config/agent.local.yaml` | Runtime 地址、`llm.api_key`、模型名（无需环境变量） |
-| `config/agent.local.yaml.example` | 配置模板与说明 |
-| `config/agent.secrets.yaml` | 可选，仅覆盖 `llm.api_key`（gitignore） |
+| `config/local.yaml` | **统一配置**：gRPC Runtime、`engine` 段（ES/S3/meta/Chrome）、Python Agent（`runtime`/`llm`/`harness`） |
+| `config/local.yaml.example` | 模板（复制为 `local.yaml` 后填写 `llm.api_key`） |
+
+`local.yaml` 已加入 `.gitignore`，避免误提交密钥。
 
 ## 拓扑
 

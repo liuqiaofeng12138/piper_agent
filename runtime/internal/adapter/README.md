@@ -4,7 +4,7 @@
 
 ## 内容
 
-- 读取 `deploy/config/runtime.local.yaml` + 指向 `engine/etc/pipergo-api.yaml`
+- 读取 `deploy/config/local.yaml` 中的 `engine:` 段
 - 构造与 `engine/internal/svc.ServiceContext` 等价的依赖图（Go import 仍为 `piper_go/...`）
 - Chrome / ES / S3 就绪检查（可复用 `pkg/bootstrap`）
 

@@ -163,7 +163,7 @@ piper_agent/
 
 - [x] Go：`piper_go/pkg/agentruntime` + `runtime/internal/piper` 调用 `Engine.RunTemplate`
 - [x] 实现 `ListTemplates` / `GetTemplate`、`RunTemplate`、`GetTokenData`（见 [PHASE_B.md](PHASE_B.md)）
-- [x] 配置：`piper_go_config` 与 `pipergo-api.yaml` 共用 meta/ES/H2 路径
+- [x] 配置：`deploy/config/local.yaml` 统一 Runtime 与 engine
 
 ### Phase C — LLM 写模版与填参（2–4 周）
 

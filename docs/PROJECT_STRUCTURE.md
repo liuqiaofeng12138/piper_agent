@@ -13,7 +13,7 @@ piper_agent/                      # 本仓库（Monorepo）
 │   ├── common/v1/types.proto
 │   └── runtime/v1/*.proto
 ├── engine/                       # Piper 采集内核（go.mod module: piper_go）
-│   ├── etc/pipergo-api.yaml      # ES/S3/meta/Chrome 配置
+│   └── etc/db/                   # meta SQLite 数据（配置在 deploy/config/local.yaml）
 │   ├── pkg/agentruntime/         # Runtime 嵌入入口（Bootstrap）
 │   └── pkg/tpl/ pkg/distributor/ # 模版与执行
 ├── runtime/                      # Agent gRPC Runtime（module: piper_agent/runtime）
@@ -35,8 +35,7 @@ piper_agent/                      # 本仓库（Monorepo）
 ├── shared/
 ├── deploy/
 │   └── config/
-│       ├── runtime.local.yaml    # piper_go_config → ../../engine/etc/...
-│       └── agent.local.yaml
+│       └── local.yaml            # Runtime + engine + Agent 统一配置
 └── scripts/
 ```
 
@@ -55,5 +54,5 @@ agents (Python Harness)
 
 | 配置项 | 解析方式 |
 |--------|----------|
-| `deploy/config/runtime.local.yaml` 的 `piper_go_config` | 相对**该 yaml 文件**所在目录 |
+| `deploy/config/local.yaml` 的 `engine.H2.path` 等 | 相对**该 yaml 文件**所在目录 |
 | `runtime/go.mod` 的 `replace piper_go` | 相对 `runtime/` → `../engine` |

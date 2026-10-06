@@ -15,7 +15,7 @@
 
 - 目录：`engine/`（Go 模块名仍为 `piper_go`）
 - Agent 嵌入包：`piper_go/pkg/agentruntime`（Bootstrap + Service API）
-- Runtime 配置：`mock: false` + `piper_go_config: "../../engine/etc/pipergo-api.yaml"`（相对 `deploy/config/`）
+- Runtime 配置：`deploy/config/local.yaml` 中 `mock: false`，并在同文件 `engine:` 段配置 ES/S3/H2/Chrome
 - `relax_deps: true`：不强制 Docker 容器检查（与独立 API 进程一致时可开 `requireDeps`）
 - `skip_storage_wait: false`：启动前等待 ES/S3 可达（与 Piper dev 栈一致）
 
@@ -25,7 +25,7 @@
 # 需 ES 等依赖就绪（docker/piper_dev.yaml）
 cd piper_agent\runtime
 go build -o piper-runtime.exe ./cmd/piper-runtime
-.\piper-runtime.exe -f ..\deploy\config\runtime.local.yaml
+.\piper-runtime.exe -f ..\deploy\config\local.yaml
 ```
 
 Mock 模式：配置中 `mock: true`，行为同 Phase A。

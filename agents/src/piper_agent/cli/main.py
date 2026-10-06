@@ -21,7 +21,7 @@ def main() -> None:
     default_cfg = str(default_config_path())
 
     repl_p = sub.add_parser("repl", help="Manual harness REPL (gRPC tools)")
-    repl_p.add_argument("--config", default=default_cfg, help="agent.local.yaml")
+    repl_p.add_argument("--config", default=default_cfg, help="deploy/config/local.yaml")
     repl_p.add_argument(
         "--runtime",
         default=None,
@@ -29,7 +29,7 @@ def main() -> None:
     )
 
     chat_p = sub.add_parser("chat", help="Phase C LLM agent (OpenAI-compatible)")
-    chat_p.add_argument("--config", default=default_cfg, help="agent.local.yaml")
+    chat_p.add_argument("--config", default=default_cfg, help="deploy/config/local.yaml")
     chat_p.add_argument(
         "--runtime",
         default=None,
@@ -54,7 +54,7 @@ def main() -> None:
             print(f"OK: Runtime reachable at {cfg.runtime_address}")
         except Exception as e:
             print(f"FAIL: cannot reach Runtime at {cfg.runtime_address}: {e}")
-            print("Start: piper_agent/runtime/piper-runtime.exe -f ..\\deploy\\config\\runtime.local.yaml")
+            print("Start: piper_agent/runtime/piper-runtime.exe -f ..\\deploy\\config\\local.yaml")
             raise SystemExit(1) from e
         finally:
             client.close()

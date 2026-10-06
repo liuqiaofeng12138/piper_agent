@@ -22,7 +22,7 @@
 cd piper_agent\runtime
 go build -o piper-runtime.exe ./cmd/piper-runtime
 .\piper-runtime.exe -listen :50051
-# 或指定配置：.\piper-runtime.exe -f ..\deploy\config\runtime.local.yaml
+# 或指定配置：.\piper-runtime.exe -f ..\deploy\config\local.yaml
 ```
 
 ### 2. Python REPL

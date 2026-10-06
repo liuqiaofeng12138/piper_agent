@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	configPath := flag.String("f", "", "path to runtime yaml config")
+	configPath := flag.String("f", config.DefaultConfigPath(), "path to unified config (deploy/config/local.yaml)")
 	listen := flag.String("listen", "", "override gRPC listen address (e.g. :50051)")
 	flag.Parse()
 

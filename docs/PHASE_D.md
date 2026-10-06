@@ -11,7 +11,7 @@
 | **速率** | `max_runs_per_session` 限制单会话 Run 次数 |
 | **CLI** | `piper-agent chat`（已有）、`piper-agent ask "..."` 单轮 |
 
-## 配置（agent.local.yaml）
+## 配置（local.yaml 的 harness 段）
 
 ```yaml
 harness:
