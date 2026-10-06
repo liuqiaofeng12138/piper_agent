@@ -32,13 +32,8 @@ func DocForES(doc map[string]any, taskID, tplID, tokenID string) map[string]any 
 	if tokenID != "" {
 		out["__token_id"] = tokenID
 	}
-	if id, ok := doc["id"].(string); ok && id != "" {
-		out["id"] = id
-	} else if title, ok := out["title"].(string); ok && title != "" {
-		out["id"] = util.MD5Hex(title)
-	} else {
-		out["id"] = util.MD5Hex(tokenID + "::" + indexID)
-	}
+	explicitID, _ := doc["id"].(string)
+	out["id"] = util.AssignDocumentID(out, explicitID, tokenID, indexID)
 	out["create_time"] = now
 	out["update_time"] = now
 	return out

@@ -18,3 +18,13 @@ func TestDocForES(t *testing.T) {
 		t.Fatal("expected id")
 	}
 }
+
+func TestDocForES_uniquePerRow(t *testing.T) {
+	d1 := map[string]any{"_index_id": "articles", "quote_text": "a", "author": "1"}
+	d2 := map[string]any{"_index_id": "articles", "quote_text": "b", "author": "2"}
+	id1 := DocForES(d1, "", "", "tok")["id"]
+	id2 := DocForES(d2, "", "", "tok")["id"]
+	if id1 == id2 {
+		t.Fatalf("expected distinct ids, both %v", id1)
+	}
+}

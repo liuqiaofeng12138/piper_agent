@@ -390,13 +390,16 @@ func appendChildToken(log map[string]any, tok map[string]any) {
 }
 
 func setDocID(doc map[string]any) {
-	if id, ok := doc["id"].(string); ok && id != "" {
-		return
+	indexID, _ := doc["_index_id"].(string)
+	explicitID, _ := doc["id"].(string)
+	fields := map[string]any{}
+	for k, v := range doc {
+		if strings.HasPrefix(k, "_") {
+			continue
+		}
+		fields[k] = v
 	}
-	title := fmt.Sprint(doc["title"])
-	if title != "" {
-		doc["id"] = util.MD5Hex(title)
-	}
+	doc["id"] = util.AssignDocumentID(fields, explicitID, "", indexID)
 }
 
 func mergeVars(token map[string]any, row map[string]any) {
