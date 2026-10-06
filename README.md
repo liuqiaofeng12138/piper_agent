@@ -40,6 +40,4 @@
    ```
 3. Agent：`cd agents && pip install -e ".[llm]" && piper-agent chat`（或 `piper-agent repl`）
 
-可选：单独启动 Piper REST API → `cd engine && go build -o pipergo.exe . && .\pipergo.exe -f etc\pipergo-api.yaml`
-
 无需设置 `OPENAI_API_KEY` 等环境变量；可选 `agent.secrets.yaml` 单独存密钥。

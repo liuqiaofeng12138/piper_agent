@@ -1,7 +1,5 @@
 # Go binaries
 /runtime/piper-runtime.exe
-/engine/pipergo.exe
-/engine/pipergo_test.exe
 *.exe
 
 # Python

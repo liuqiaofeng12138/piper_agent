@@ -15,8 +15,7 @@ piper_agent/                      # 本仓库（Monorepo）
 ├── engine/                       # Piper 采集内核（go.mod module: piper_go）
 │   ├── etc/pipergo-api.yaml      # ES/S3/meta/Chrome 配置
 │   ├── pkg/agentruntime/         # Runtime 嵌入入口（Bootstrap）
-│   ├── pkg/tpl/ pkg/distributor/ # 模版与执行
-│   └── pipergo.go                # 可选 REST API 入口
+│   └── pkg/tpl/ pkg/distributor/ # 模版与执行
 ├── runtime/                      # Agent gRPC Runtime（module: piper_agent/runtime）
 │   ├── go.mod                    # replace piper_go => ../engine
 │   ├── cmd/piper-runtime/

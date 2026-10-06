@@ -14,7 +14,7 @@ Piper 是一套**可配置的采集与数据处理系统**，核心链路为：
 | 代理 | `pkg/proxy`、MITM、账号 | 出站请求经代理池 |
 | 持久化 | ES + S3（`Persister`） | Doc/Source 写入索引与对象存储 |
 
-本仓库 `engine/`（Go 模块 `piper_go`）已具备 Phase 0–5 基线：REST CRUD、模板 HTTP/Chrome 运行、Token 队列、数据查询等（见 `engine/docs/IMPLEMENTATION_PHASES.md`）。
+本仓库 `engine/`（Go 模块 `piper_go`）提供模板 HTTP/Chrome 运行、Token 队列、数据查询等采集内核能力（由 `pkg/agentruntime` 嵌入 Runtime）。
 
 ### 1.2 目标（Piper Agent）
 

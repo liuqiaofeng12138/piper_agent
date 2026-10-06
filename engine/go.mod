@@ -11,7 +11,6 @@ require (
 	github.com/minio/minio-go/v7 v7.3.0
 	github.com/oliveagle/jsonpath v0.1.4
 	github.com/zeromicro/go-zero v1.10.3
-	golang.org/x/crypto v0.55.0
 	modernc.org/sqlite v1.59.0
 )
 
@@ -73,6 +72,7 @@ require (
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect

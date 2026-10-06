@@ -4,7 +4,6 @@ import (
 	"sync/atomic"
 
 	"piper_go/internal/config"
-	"piper_go/pkg/auth"
 	"piper_go/pkg/cluster/model"
 	"piper_go/pkg/db/es"
 	"piper_go/pkg/db/meta"
@@ -16,7 +15,6 @@ import (
 
 type ServiceContext struct {
 	Config config.Config
-	Auth   *auth.Service
 	Meta   *meta.Store
 	ES     *es.Client
 	Dist   *distributor.Engine
@@ -29,10 +27,7 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
-	return &ServiceContext{
-		Config: c,
-		Auth:   auth.NewService(c.Auth),
-	}
+	return &ServiceContext{Config: c}
 }
 
 func (s *ServiceContext) SetReady(v bool) {
@@ -51,14 +46,3 @@ func (s *ServiceContext) Node() *model.NodeInfo {
 	return s.node.Load()
 }
 
-func (s *ServiceContext) NodeInfoForAPI() *model.NodeInfo {
-	src := s.Node()
-	if src == nil {
-		return &model.NodeInfo{Ready: s.Ready()}
-	}
-	copy := *src
-	copy.ID = copy.InstID
-	copy.Local = false
-	copy.Ready = s.Ready()
-	return &copy
-}
