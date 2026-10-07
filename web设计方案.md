@@ -354,10 +354,10 @@ agents:
 
 ### Phase W3 — 产品体验与运维（1–2 周）
 
-- [ ] 停止生成、run 进度 UI、Agent 徽章
-- [ ] `GET /agents`、探活聚合
-- [ ] `deploy/docker-compose.web.yaml`、文档更新
-- [ ] 限流与请求体大小限制
+- [x] 停止生成、run 进度 UI、Agent 徽章
+- [x] `GET /agents`、探活聚合
+- [x] `deploy/docker-compose.web.yaml`、文档更新
+- [x] 限流与请求体大小限制
 
 ### Phase W4 — 多 Agent 扩展（持续）
 

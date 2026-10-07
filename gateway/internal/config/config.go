@@ -14,6 +14,8 @@ type Config struct {
 	Session             SessionConfig `yaml:"session"`
 	Classifier          ClassifierConfig `yaml:"classifier"`
 	ChatTimeoutSeconds  int    `yaml:"chat_timeout_seconds"`
+	MaxRequestBodyBytes int64  `yaml:"max_request_body_bytes"`
+	RateLimitPerMinute  int    `yaml:"rate_limit_per_minute"`
 	RuntimeAddress      string `yaml:"-"`
 	Agents              AgentsConfig `yaml:"agents"`
 }
@@ -52,6 +54,8 @@ func Load(path string) (*Config, error) {
 		Session:            SessionConfig{Driver: "sqlite", SQLitePath: "../../data/gateway.db"},
 		Classifier:         ClassifierConfig{Mode: "rule"},
 		ChatTimeoutSeconds: 600,
+		MaxRequestBodyBytes: 1 << 20,
+		RateLimitPerMinute:  60,
 		Agents: AgentsConfig{
 			WebCrawler: AgentEndpoint{Address: "127.0.0.1:15061", Enabled: true},
 		},
@@ -76,6 +80,12 @@ func Load(path string) (*Config, error) {
 		}
 		if v, ok := intFromYAML(gw["chat_timeout_seconds"]); ok && v > 0 {
 			cfg.ChatTimeoutSeconds = v
+		}
+		if v, ok := intFromYAML(gw["max_request_body_bytes"]); ok && v > 0 {
+			cfg.MaxRequestBodyBytes = int64(v)
+		}
+		if v, ok := intFromYAML(gw["rate_limit_per_minute"]); ok && v > 0 {
+			cfg.RateLimitPerMinute = v
 		}
 		auth, _ := gw["auth"].(map[string]any)
 		if auth != nil {

@@ -27,9 +27,16 @@ go run ./cmd/piper-gateway -f ../deploy/config/local.yaml
 
 ## API
 
-- `GET /api/v1/health`
-- `GET /api/v1/agents`
+- `GET /api/v1/health`（含 worker / runtime 探活）
+- `GET /api/v1/agents`（含 `healthy`、`address`）
 - `POST /api/v1/conversations`
 - `GET /api/v1/conversations`
 - `GET /api/v1/conversations/{id}/messages`
+- `DELETE /api/v1/conversations/{id}`（删除会话及消息）
 - `POST /api/v1/chat/completions`（`stream: true` 时返回 SSE）
+- `POST /api/v1/runs/{id}/cancel`
+
+## 防护（Phase W3）
+
+- `gateway.max_request_body_bytes`：请求体上限（默认 1MB）
+- `gateway.rate_limit_per_minute`：按 IP 每分钟请求数（默认 60）

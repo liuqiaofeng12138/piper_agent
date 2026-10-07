@@ -109,6 +109,17 @@ func (s *MemoryStore) AppendMessage(conversationID string, role Role, content st
 	return msg, true
 }
 
+func (s *MemoryStore) DeleteConversation(id string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.conversations[id]; !ok {
+		return false
+	}
+	delete(s.conversations, id)
+	delete(s.messages, id)
+	return true
+}
+
 func (s *MemoryStore) ListMessages(conversationID string) []Message {
 	s.mu.RLock()
 	msgs := s.messages[conversationID]

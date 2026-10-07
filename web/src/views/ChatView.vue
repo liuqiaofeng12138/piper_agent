@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AgentBadge from '@/components/AgentBadge.vue'
 import Composer from '@/components/Composer.vue'
 import MessageList from '@/components/MessageList.vue'
 import { useChatStore } from '@/stores/chat'
@@ -30,6 +31,8 @@ async function syncRouteConversation(id: string | undefined) {
 
 onMounted(() => {
   void syncRouteConversation(props.conversationId)
+  void store.refreshAgents()
+  void store.refreshHealth()
 })
 
 watch(
@@ -58,7 +61,14 @@ function onSuggestion(text: string) {
   <div class="chat-view">
     <header class="topbar">
       <h1 class="title">对话</h1>
-      <span class="badge">网页采集</span>
+      <AgentBadge />
+      <span
+        v-if="store.health"
+        class="health"
+        :class="store.health.status === 'ok' ? 'ok' : 'warn'"
+      >
+        {{ store.health.status === 'ok' ? '服务正常' : '部分异常' }}
+      </span>
     </header>
 
     <div class="content">
@@ -117,13 +127,16 @@ function onSuggestion(text: string) {
   font-size: 15px;
   font-weight: 600;
 }
-.badge {
+.health {
+  margin-left: auto;
   font-size: 12px;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: #e8eeff;
-  color: var(--ds-primary);
-  font-weight: 500;
+  color: var(--ds-text-muted);
+}
+.health.ok {
+  color: #059669;
+}
+.health.warn {
+  color: #d97706;
 }
 .content {
   flex: 1;

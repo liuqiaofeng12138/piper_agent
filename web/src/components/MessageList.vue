@@ -29,6 +29,7 @@ defineProps<{
             :class="{ streaming: msg.streaming }"
           >
             <div v-if="msg.steps?.length" class="steps">
+              <div class="steps-title">执行步骤</div>
               <details
                 v-for="(step, idx) in msg.steps"
                 :key="idx"
@@ -36,8 +37,9 @@ defineProps<{
                 :open="idx === msg.steps!.length - 1 && msg.streaming"
               >
                 <summary>
-                  <span v-if="step.kind === 'tool'">工具 · {{ step.tool_name || '调用' }}</span>
-                  <span v-else>进度 · {{ step.tool_name || '执行' }}</span>
+                  <span v-if="step.kind === 'tool'" class="step-kind">工具</span>
+                  <span v-else class="step-kind progress">进度</span>
+                  <span class="step-name">{{ step.tool_name || '调用' }}</span>
                 </summary>
                 <pre class="step-body">{{ step.text }}</pre>
               </details>
@@ -124,6 +126,12 @@ defineProps<{
   flex-direction: column;
   gap: 8px;
 }
+.steps-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-text-muted);
+  margin-bottom: 2px;
+}
 .step {
   border: 1px solid var(--ds-input-border);
   border-radius: 8px;
@@ -135,6 +143,24 @@ defineProps<{
   padding: 8px 12px;
   color: var(--ds-text-secondary);
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.step-kind {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e8eeff;
+  color: var(--ds-primary);
+}
+.step-kind.progress {
+  background: #ecfdf5;
+  color: #059669;
+}
+.step-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .step-body {
   margin: 0;

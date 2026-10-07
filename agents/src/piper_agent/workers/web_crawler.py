@@ -52,6 +52,7 @@ class _ConversationLoops:
         with self._lock:
             if conversation_id in self._loops:
                 return self._loops[conversation_id][0]
+            logger.info("new agent loop conv=%s", conversation_id)
             loop, client = create_loop(self._config_path, None)
             loop.session.session_id = conversation_id
             self._loops[conversation_id] = (loop, client)
@@ -83,14 +84,34 @@ class WebCrawlerServicer(execute_pb2_grpc.AgentWorkerServiceServicer):
 
     def Execute(self, request: execute_pb2.ExecuteRequest, context: grpc.ServicerContext):
         run_id = request.run_id or "run-unknown"
+        conv_id = request.conversation_id or "default"
+        logger.info(
+            "execute start run=%s conv=%s trace=%s msg_len=%d",
+            run_id,
+            conv_id,
+            request.trace_id,
+            len(request.user_message),
+        )
         cancel_ev = self._cancels.register(run_id)
 
         def cancelled() -> bool:
             return cancel_ev.is_set() or not context.is_active()
 
         try:
-            loop = self._conversations.get(request.conversation_id or "default")
+            loop = self._conversations.get(conv_id)
             for ev in loop.run_turn_iter(request.user_message, cancel=cancelled):
+                et = ev.get("type", "")
+                if et == "tool.call":
+                    logger.info("run=%s tool=%s", run_id, ev.get("tool_name"))
+                elif et == "run.progress":
+                    logger.info(
+                        "run=%s progress tool=%s msg=%s",
+                        run_id,
+                        ev.get("tool_name"),
+                        (ev.get("message") or "")[:200],
+                    )
+                elif et == "error":
+                    logger.warning("run=%s agent_error %s", run_id, ev.get("message"))
                 yield _event_to_pb(ev)
                 if ev.get("type") in ("run.cancelled", "error"):
                     break
@@ -99,9 +120,11 @@ class WebCrawlerServicer(execute_pb2_grpc.AgentWorkerServiceServicer):
             yield execute_pb2.ExecuteEvent(type="error", message=str(e))
         finally:
             self._cancels.remove(run_id)
+            logger.info("execute end run=%s conv=%s", run_id, conv_id)
 
     def Cancel(self, request: execute_pb2.CancelRequest, context: grpc.ServicerContext):
         ok = self._cancels.cancel(request.run_id)
+        logger.info("cancel run=%s ok=%s", request.run_id, ok)
         return execute_pb2.CancelResponse(ok=ok, message="cancelled" if ok else "run not found")
 
     def Health(self, request: execute_pb2.HealthRequest, context: grpc.ServicerContext):

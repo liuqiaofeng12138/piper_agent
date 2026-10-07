@@ -149,6 +149,16 @@ func (s *SQLiteStore) AppendMessage(conversationID string, role Role, content st
 	return msg, true
 }
 
+func (s *SQLiteStore) DeleteConversation(id string) bool {
+	res, err := s.db.Exec(`DELETE FROM conversations WHERE id=?`, id)
+	if err != nil {
+		return false
+	}
+	_, _ = s.db.Exec(`DELETE FROM messages WHERE conversation_id=?`, id)
+	n, _ := res.RowsAffected()
+	return n > 0
+}
+
 func (s *SQLiteStore) ListMessages(conversationID string) []Message {
 	rows, err := s.db.Query(
 		`SELECT id, role, content, created_at FROM messages WHERE conversation_id=? ORDER BY created_at ASC`,

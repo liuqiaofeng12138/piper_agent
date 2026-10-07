@@ -7,4 +7,5 @@ type Store interface {
 	GetConversation(id string) (*Conversation, bool)
 	AppendMessage(conversationID string, role Role, content string) (Message, bool)
 	ListMessages(conversationID string) []Message
+	DeleteConversation(id string) bool
 }

@@ -1,0 +1,37 @@
+# Phase W3：Web 全栈一键编排（需本机已安装 Python 依赖或挂载 venv）
+# 用法：docker compose -f deploy/docker-compose.web.yaml up --build
+# 注意：piper-serve 会在容器内拉起 Runtime 与 Python Worker（需镜像内具备 go + python + 依赖）。
+# 生产建议拆分为独立服务并接入编排平台。
+
+version: "3.8"
+
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app/web
+    volumes:
+      - ../web:/app/web
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE=/api/v1
+
+  backend:
+    image: golang:1.26-bookworm
+    working_dir: /app/gateway
+    volumes:
+      - ..:/app
+      - ../deploy/config/local.yaml:/app/deploy/config/local.yaml:ro
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+      - "15061:15061"
+    command: >
+      sh -c "cd /app/gateway && go run ./cmd/piper-serve -f /app/deploy/config/local.yaml"
+    environment:
+      - PIPER_WORKER_PYTHON=python3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

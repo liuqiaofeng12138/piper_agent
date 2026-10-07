@@ -1,4 +1,4 @@
-import type { AgentInfo, Conversation, Message, StreamEvent } from './types'
+import type { AgentInfo, Conversation, HealthResponse, Message, StreamEvent } from './types'
 
 const base = import.meta.env.VITE_API_BASE ?? '/api/v1'
 
@@ -17,7 +17,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export async function healthCheck(): Promise<{ status: string }> {
+export async function healthCheck(): Promise<HealthResponse> {
   return request('/health')
 }
 
@@ -38,6 +38,13 @@ export async function listConversations(): Promise<{ conversations: Conversation
 
 export async function listMessages(conversationId: string): Promise<{ messages: Message[] }> {
   return request(`/conversations/${conversationId}/messages`)
+}
+
+export async function deleteConversation(conversationId: string): Promise<void> {
+  const res = await fetch(`${base}/conversations/${conversationId}`, { method: 'DELETE' })
+  if (!res.ok) {
+    throw new Error(await res.text())
+  }
 }
 
 export interface ChatStreamOptions {

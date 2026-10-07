@@ -1,7 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { cancelRun, chatStream, listConversations, listMessages } from '@/api/client'
-import type { Conversation, Message, StreamEvent } from '@/api/types'
+import {
+  cancelRun,
+  chatStream,
+  deleteConversation,
+  healthCheck,
+  listAgents,
+  listConversations,
+  listMessages,
+} from '@/api/client'
+import type { AgentInfo, Conversation, HealthResponse, Message, StreamEvent } from '@/api/types'
 
 export const useChatStore = defineStore('chat', () => {
   const conversations = ref<Conversation[]>([])
@@ -10,7 +18,26 @@ export const useChatStore = defineStore('chat', () => {
   const loadingHistory = ref(false)
   const streaming = ref(false)
   const currentRunId = ref<string | null>(null)
+  const agents = ref<AgentInfo[]>([])
+  const health = ref<HealthResponse | null>(null)
   let abortController: AbortController | null = null
+
+  async function refreshAgents() {
+    try {
+      const { agents: list } = await listAgents()
+      agents.value = Array.isArray(list) ? list : []
+    } catch {
+      agents.value = []
+    }
+  }
+
+  async function refreshHealth() {
+    try {
+      health.value = await healthCheck()
+    } catch {
+      health.value = null
+    }
+  }
 
   async function refreshConversations() {
     try {
@@ -152,16 +179,34 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  async function removeConversation(id: string) {
+    try {
+      await deleteConversation(id)
+    } catch {
+      /* 忽略网络错误，仍刷新列表 */
+    }
+    if (activeConversationId.value === id) {
+      activeConversationId.value = null
+      messages.value = []
+    }
+    await refreshConversations()
+  }
+
   return {
     conversations,
     messages,
     activeConversationId,
     loadingHistory,
     streaming,
+    agents,
+    health,
     refreshConversations,
+    refreshAgents,
+    refreshHealth,
     loadConversation,
     resetForNewChat,
     sendMessage,
     stopGeneration,
+    removeConversation,
   }
 })

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"sync"
 	"time"
 
@@ -89,20 +90,25 @@ func (c *WorkerClient) Execute(
 	if err != nil {
 		return err
 	}
+	log.Printf("[worker] execute start run=%s conv=%s", req.RunId, req.ConversationId)
 	stream, err := stub.Execute(ctx, req)
 	if err != nil {
+		log.Printf("[worker] execute open failed run=%s err=%v", req.RunId, err)
 		return err
 	}
 	for {
 		ev, err := stream.Recv()
 		if err != nil {
 			if err == io.EOF {
+				log.Printf("[worker] execute done run=%s", req.RunId)
 				return nil
 			}
 			st, ok := status.FromError(err)
 			if ok && (st.Code() == codes.Canceled || st.Code() == codes.DeadlineExceeded) {
+				log.Printf("[worker] execute closed run=%s code=%s", req.RunId, st.Code())
 				return nil
 			}
+			log.Printf("[worker] execute recv error run=%s err=%v", req.RunId, err)
 			return err
 		}
 		if onEvent != nil {

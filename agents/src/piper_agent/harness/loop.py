@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable, Iterator
 from typing import Any
 
 from piper_agent.config.loader import AgentConfig
 from piper_agent.harness.registry import ToolRegistry
 from piper_agent.harness.session import SessionState
+
+logger = logging.getLogger(__name__)
 
 
 class AgentLoop:
@@ -73,6 +76,11 @@ class AgentLoop:
         """流式执行一轮对话，供 Web Worker / gRPC 推送事件。"""
         self.session.messages.append({"role": "user", "content": user_text})
         system = self._system_prompt()
+        logger.info(
+            "loop start session=%s msg_len=%d",
+            self.session.session_id,
+            len(user_text),
+        )
         yield {"type": "run.started", "message": "agent loop started"}
 
         for step in range(self.config.harness.max_steps):
@@ -80,6 +88,7 @@ class AgentLoop:
                 yield {"type": "run.cancelled", "message": "用户取消"}
                 return
 
+            logger.info("loop step=%d session=%s calling llm", step + 1, self.session.session_id)
             response = self.llm.chat.completions.create(
                 model=self.config.llm.model,
                 messages=[{"role": "system", "content": system}, *self.session.messages],
@@ -87,6 +96,13 @@ class AgentLoop:
                 tool_choice="auto",
             )
             msg = response.choices[0].message
+            logger.info(
+                "loop step=%d session=%s llm done content_len=%d tool_calls=%d",
+                step + 1,
+                self.session.session_id,
+                len(msg.content or ""),
+                len(msg.tool_calls or []),
+            )
             assistant_record: dict[str, Any] = {
                 "role": "assistant",
                 "content": msg.content or "",
@@ -111,6 +127,7 @@ class AgentLoop:
 
             if not msg.tool_calls:
                 final = (msg.content or "").strip() or "(empty response)"
+                logger.info("loop done session=%s reply_len=%d", self.session.session_id, len(final))
                 yield {"type": "message.done", "content": final}
                 return
 
@@ -120,6 +137,7 @@ class AgentLoop:
                     return
                 name = tc.function.name
                 args = tc.function.arguments or "{}"
+                logger.info("loop tool session=%s name=%s", self.session.session_id, name)
                 yield {
                     "type": "tool.call",
                     "tool_name": name,

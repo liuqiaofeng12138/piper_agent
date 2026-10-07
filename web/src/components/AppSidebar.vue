@@ -19,6 +19,14 @@ function selectConversation(id: string) {
   void store.loadConversation(id)
   void router.push({ name: 'chat', params: { conversationId: id } })
 }
+
+async function onDelete(id: string) {
+  if (!window.confirm('确定删除该对话？此操作不可恢复。')) return
+  await store.removeConversation(id)
+  if (route.params.conversationId === id) {
+    void router.push({ name: 'chat-new' })
+  }
+}
 </script>
 
 <template>
@@ -33,16 +41,34 @@ function selectConversation(id: string) {
     </button>
     <div class="history-label">历史对话</div>
     <nav class="history">
-      <button
+      <div
         v-for="c in conversationList"
         :key="c.id"
-        type="button"
         class="history-item"
         :class="{ active: c.id === activeId }"
+        role="button"
+        tabindex="0"
         @click="selectConversation(c.id)"
+        @keydown.enter="selectConversation(c.id)"
       >
         <span class="title">{{ c.title }}</span>
-      </button>
+        <button
+          type="button"
+          class="delete"
+          title="删除对话"
+          @click.stop="onDelete(c.id)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
       <p v-if="conversationList.length === 0" class="empty">暂无历史，发送消息开始对话</p>
     </nav>
     <footer class="sidebar-foot">
@@ -115,6 +141,9 @@ function selectConversation(id: string) {
   gap: 2px;
 }
 .history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   text-align: left;
   border: none;
   background: transparent;
@@ -123,6 +152,7 @@ function selectConversation(id: string) {
   font-size: 14px;
   color: var(--ds-text-secondary);
   transition: background 0.15s;
+  cursor: pointer;
 }
 .history-item:hover {
   background: var(--ds-hover);
@@ -133,10 +163,33 @@ function selectConversation(id: string) {
   font-weight: 500;
 }
 .title {
-  display: block;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.delete {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ds-text-muted);
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+.history-item:hover .delete,
+.history-item.active .delete {
+  opacity: 1;
+}
+.delete:hover {
+  background: #fee2e2;
+  color: var(--ds-danger);
 }
 .empty {
   margin: 12px 8px;

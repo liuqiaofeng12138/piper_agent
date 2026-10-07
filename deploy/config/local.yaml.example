@@ -49,6 +49,8 @@ runtime:
 gateway:
   listen: ":8080"
   chat_timeout_seconds: 600
+  max_request_body_bytes: 1048576
+  rate_limit_per_minute: 60
   auth:
     mode: none
     token: ""

@@ -27,6 +27,15 @@ export interface AgentInfo {
   display_name: string
   description: string
   enabled: boolean
+  healthy?: boolean
+  address?: string
+}
+
+export interface HealthResponse {
+  status: string
+  service: string
+  phase: string
+  checks?: Record<string, { ok?: boolean; address?: string; error?: string }>
 }
 
 export type StreamEventType =
