@@ -114,7 +114,7 @@ func defaultAgents() []AgentSpec {
 			Address:     "127.0.0.1:15061",
 			Enabled:     true,
 			Default:     true,
-			Module:      "claw_agent.workers.web_crawler",
+			Module:      "web_crawler_agent.workers.web_crawler",
 		},
 	}
 }

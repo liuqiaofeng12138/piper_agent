@@ -142,7 +142,8 @@ piper_agent/
 ├── docs/                 # 方案、ADR、API 说明
 ├── proto/                # gRPC 契约
 ├── runtime/              # Go Runtime + Harness 适配（执行侧）
-├── agents/               # Python Agent + Harness（认知侧）
+├── web_crawler_agent/    # Python Web 采集子 Agent + Harness（认知侧，包名 web_crawler_agent）
+├── general_agent/        # Python 平台通用子 Agent（包名 piper_agent）
 ├── shared/               # 模版 JSON Schema、示例模版
 ├── deploy/               # docker-compose、K8s 草稿
 └── scripts/              # 代码生成、本地联调
@@ -156,7 +157,7 @@ piper_agent/
 
 - [x] 定义 `proto/runtime/v1/*.proto`（见 `proto/`，运行说明 [PHASE_A.md](PHASE_A.md)）
 - [x] Go：`runtime/cmd/piper-runtime` 启动 gRPC，**Mock** 实现 `ValidateTemplate` / `RunTemplate` / `SubscribeRun`
-- [x] Python：`agents/harness` 最小 REPL + gRPC 客户端，调用 Mock
+- [x] Python：`web_crawler_agent/src/web_crawler_agent/harness` 最小 REPL + gRPC 客户端，调用 Mock
 - [x] 文档：RPC 错误码约定（[RPC_ERRORS.md](RPC_ERRORS.md)）
 
 ### Phase B — 对接 piper_go（2–3 周）
@@ -188,7 +189,7 @@ piper_agent/
 4. **Policies**：禁止未 Validate 就 Run；敏感操作需用户 confirm（可选）
 5. **Events**：向 UI 推送 `Planning`, `TemplateDraft`, `Running`, `Saved`
 
-参考实现位置：`agents/harness/`。
+参考实现位置：`web_crawler_agent/src/web_crawler_agent/harness/`。
 
 ---
 

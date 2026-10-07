@@ -1,7 +1,7 @@
-# agents（Python）
+# general_agent（Python，包名 `piper_agent`）
 
 **平台通用子 Agent Workers**：与采集无关的通用对话类 Agent。
-Web 采集 Agent 已独立为 [../claw_agent/](../claw_agent/) 项目。
+Web 采集 Agent 已独立为 [../web_crawler_agent/](../web_crawler_agent/) 项目。
 
 ## 子目录
 

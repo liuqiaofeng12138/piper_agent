@@ -1,7 +1,7 @@
 """Rewrite protoc-generated imports to <pkg>.pb.* (run after gen_proto).
 
-claw_agent（采集链路，含 runtime/common/agent 全部 stub）→ claw_agent.pb.*
-agents（通用 Worker，仅 agent/v1 stub）→ piper_agent.pb.*
+web_crawler_agent（采集链路，含 runtime/common/agent 全部 stub）→ web_crawler_agent.pb.*
+general_agent（通用 Worker，仅 agent/v1 stub）→ piper_agent.pb.*
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 TARGETS = [
-    (ROOT / "claw_agent" / "src" / "claw_agent" / "pb", "claw_agent"),
-    (ROOT / "agents" / "src" / "piper_agent" / "pb", "piper_agent"),
+    (ROOT / "web_crawler_agent" / "src" / "web_crawler_agent" / "pb", "web_crawler_agent"),
+    (ROOT / "general_agent" / "src" / "piper_agent" / "pb", "piper_agent"),
 ]
 
 IMPORT_RE = [

@@ -1,5 +1,5 @@
 [project]
-name = "claw-agent"
+name = "web-crawler-agent"
 version = "0.1.0"
 description = "Web 采集子 Agent：自然语言 → Piper 模版 → Runtime 执行（gRPC Worker）"
 readme = "README.md"
@@ -17,7 +17,7 @@ dev = ["pytest>=7.4", "pytest-asyncio>=0.23", "ruff>=0.3"]
 llm = ["openai>=1.12", "anthropic>=0.18"]
 
 [project.scripts]
-claw-agent = "claw_agent.cli.main:main"
+web-crawler-agent = "web_crawler_agent.cli.main:main"
 
 [build-system]
 requires = ["setuptools>=68"]

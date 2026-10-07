@@ -1,10 +1,10 @@
 import json
 from unittest.mock import MagicMock
 
-from claw_agent.config.loader import AgentConfig
-from claw_agent.harness.session import SessionState
-from claw_agent.rag.template_index import TemplateIndex
-from claw_agent.tools.handlers import ToolHandlers
+from web_crawler_agent.config.loader import AgentConfig
+from web_crawler_agent.harness.session import SessionState
+from web_crawler_agent.rag.template_index import TemplateIndex
+from web_crawler_agent.tools.handlers import ToolHandlers
 
 
 def test_load_shared_example_template(tmp_path):

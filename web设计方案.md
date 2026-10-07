@@ -32,7 +32,7 @@
                   → 采集类问题 → 现有 Harness + piper-runtime → engine
 ```
 
-CLI（`claw_agent/src/claw_agent/cli/main.py`）在 Web 化后保留 `doctor` 运维检查；**主入口改为 Web**。
+CLI（`web_crawler_agent/src/web_crawler_agent/cli/main.py`）在 Web 化后保留 `doctor` 运维检查；**主入口改为 Web**。
 
 ### 1.3 非目标（首期）
 
@@ -77,7 +77,7 @@ CLI（`claw_agent/src/claw_agent/cli/main.py`）在 Web 化后保留 `doctor` �
                │ gRPC stream                    │ gRPC (已有)
                ▼                                ▼
 ┌──────────────────────────┐      ┌──────────────────────────────┐
-│  agents/ (Python)         │      │  runtime/ piper-runtime       │
+│  *_agent/ (Python)        │      │  runtime/ piper-runtime       │
 │  - worker: web_crawler    │─────▶│  Validate / Run / GetData     │
 │    (封装 orchestrator)    │      │  → engine/                    │
 │  - worker: (future) RAG   │      └──────────────────────────────┘
@@ -88,7 +88,7 @@ CLI（`claw_agent/src/claw_agent/cli/main.py`）在 Web 化后保留 `doctor` �
 ### 2.3 为什么仍用 Go + Python
 
 - **Go**：万级 SSE 连接、请求超时与取消、路由与限流；与现有 `runtime` 同语言，便于同进程或 sidecar 部署。
-- **Python**：现有 `AgentLoop`、`ToolHandlers`、`orchestrator` 已在 `agents/`；LLM 与爬虫工具生态在 Python；IO 密集型 Agent 用 `asyncio` + 多 Worker 进程水平扩展。
+- **Python**：现有 `AgentLoop`、`ToolHandlers`、`orchestrator` 已在 `web_crawler_agent/`；LLM 与爬虫工具生态在 Python；IO 密集型 Agent 用 `asyncio` + 多 Worker 进程水平扩展。
 
 Python **GIL** 问题：网关不跑 LLM 主循环；每个子 Agent 以 **多进程 Worker** 或 **多副本 Pod** 扩展，网关做负载均衡。
 
@@ -135,9 +135,9 @@ agents:
 
 **职责**：将现有 CLI 能力封装为 **无 REPL 的流式服务**。
 
-- 代码复用：`claw_agent/src/claw_agent/agents/orchestrator.py` 的 `create_loop()`、`AgentLoop.run_turn_iter()`（逐事件 yield：assistant token、tool.call、run.progress）。
+- 代码复用：`web_crawler_agent/src/web_crawler_agent/agents/orchestrator.py` 的 `create_loop()`、`AgentLoop.run_turn_iter()`（逐事件 yield：assistant token、tool.call、run.progress）。
 - 对 Runtime：继续使用 `RuntimeClient` → `runtime.address`（与 `local.yaml` 一致）。
-- 进程形态：由 `piper-serve` 子进程启动 `python -m claw_agent.workers.web_crawler`（gRPC `AgentWorkerService.Execute`），**不提供 CLI 入口**。
+- 进程形态：由 `piper-serve` 子进程启动 `python -m web_crawler_agent.workers.web_crawler`（gRPC `AgentWorkerService.Execute`），**不提供 CLI 入口**。
 
 **用户可见事件类型**（经网关转为 SSE）：
 
@@ -261,11 +261,11 @@ piper_agent/
 │       ├── stream/          # SSE
 │       └── agentclient/     # 调 Python worker
 ├── web/                     # Vue 3 + TS 前端
-├── claw_agent/              # Python：Web 采集子 Agent（W4 起独立项目）
-│   └── src/claw_agent/
+├── web_crawler_agent/       # Python：Web 采集子 Agent（W4 起独立项目，包名 web_crawler_agent）
+│   └── src/web_crawler_agent/
 │       ├── workers/         # web_crawler gRPC Worker
 │       └── ...              # harness / tools / orchestrator / clients / rag
-├── agents/                  # Python：平台通用子 Agent（general_chat 等）
+├── general_agent/           # Python：平台通用子 Agent（general_chat 等，包名 piper_agent）
 │   └── src/piper_agent/
 │       └── workers/         # general_chat gRPC Worker
 ├── runtime/                 # 已有，配置 listen :50051
@@ -318,7 +318,7 @@ agents:
 2. **一键后端**：`cd gateway && go run ./cmd/piper-serve -f ../deploy/config/local.yaml`（内部拉起 Runtime、Worker、网关）。
 3. `cd web && npm run dev` → 浏览器访问 Vite 端口。
 
-单独调试时可使用 `piper-runtime`、`python -m claw_agent.workers.web_crawler`、`piper-gateway` 分进程启动。
+单独调试时可使用 `piper-runtime`、`python -m web_crawler_agent.workers.web_crawler`、`piper-gateway` 分进程启动。
 
 生产：Nginx 托管 `web` 静态资源，`/api` 反代 `gateway`；TLS 在 Nginx 终止。
 
@@ -398,7 +398,7 @@ agents:
 
 | 已有能力 | Web 系统中的位置 |
 |----------|------------------|
-| `piper-agent chat` / `ask` | 已移除；仅保留 `claw-agent doctor` 运维检查 |
+| `piper-agent chat` / `ask` | 已移除；仅保留 `web-crawler-agent doctor` 运维检查 |
 | `AgentLoop` + `ToolHandlers` | Python worker 内核 |
 | `piper-runtime` gRPC | 仅 web_crawler 调用 |
 | `engine` WebSocket 进度 | 可选：网关订阅并转为 `run.progress` SSE；或 worker 轮询 `SubscribeRun` |

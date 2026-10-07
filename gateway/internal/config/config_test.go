@@ -53,12 +53,12 @@ agents:
 	if got := cfg.Agents[0].WorkerModule(); got != "piper_agent.workers.web_crawler" {
 		t.Fatalf("worker module = %s", got)
 	}
-	// 内置默认注册表的 web_crawler 指向 claw_agent 项目
+	// 内置默认注册表的 web_crawler 指向 web_crawler_agent 项目
 	def, err := Load("")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := def.Agents[0].WorkerModule(); got != "claw_agent.workers.web_crawler" {
+	if got := def.Agents[0].WorkerModule(); got != "web_crawler_agent.workers.web_crawler" {
 		t.Fatalf("default worker module = %s", got)
 	}
 }

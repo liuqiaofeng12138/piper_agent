@@ -147,11 +147,11 @@ func startWorker(ctx context.Context, configPath string, repoRoot string, agent 
 }
 
 // workerCommand 启动 gRPC Worker（python -m <agent.Module>），不经 CLI。
-// PYTHONPATH 同时覆盖 claw_agent（采集 Agent）与 agents（通用 Agent）两个 Python 项目。
+// PYTHONPATH 同时覆盖 web_crawler_agent（采集 Agent）与 general_agent（通用 Agent）两个 Python 项目。
 func workerCommand(configPath string, repoRoot string, agent config.AgentSpec) (string, []string, []string) {
 	srcDirs := []string{
-		filepath.Join(repoRoot, "claw_agent", "src"),
-		filepath.Join(repoRoot, "agents", "src"),
+		filepath.Join(repoRoot, "web_crawler_agent", "src"),
+		filepath.Join(repoRoot, "general_agent", "src"),
 	}
 	extraEnv := []string{
 		fmt.Sprintf("PYTHONPATH=%s", strings.Join(srcDirs, string(os.PathListSeparator))),
@@ -166,8 +166,8 @@ func workerCommand(configPath string, repoRoot string, agent config.AgentSpec) (
 		return override, moduleArgs, extraEnv
 	}
 
-	// 优先 claw_agent/.venv，其次 agents/.venv（两者依赖相同，可共用）
-	for _, proj := range []string{"claw_agent", "agents"} {
+	// 优先 web_crawler_agent/.venv，其次 general_agent/.venv（两者依赖相同，可共用）
+	for _, proj := range []string{"web_crawler_agent", "general_agent"} {
 		venvPy := filepath.Join(repoRoot, proj, ".venv", "Scripts", "python.exe")
 		if runtime.GOOS != "windows" {
 			venvPy = filepath.Join(repoRoot, proj, ".venv", "bin", "python")
@@ -204,7 +204,7 @@ func yamlListen(configPath string, key string, fallback string) string {
 func findRepoRoot(configPath string) string {
 	dir := filepath.Dir(configPath)
 	for i := 0; i < 6; i++ {
-		if fileExists(filepath.Join(dir, "go.work")) || fileExists(filepath.Join(dir, "agents", "pyproject.toml")) {
+		if fileExists(filepath.Join(dir, "go.work")) || fileExists(filepath.Join(dir, "general_agent", "pyproject.toml")) {
 			return dir
 		}
 		parent := filepath.Dir(dir)

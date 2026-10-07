@@ -1,12 +1,12 @@
 # Generate Go + Python stubs from piper_agent/proto
-# Python 输出：claw_agent（全部 proto，采集链路）+ agents（仅 agent/v1，通用 Worker 契约）
+# Python 输出：web_crawler_agent（全部 proto，采集链路）+ general_agent（仅 agent/v1，通用 Worker 契约）
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $ProtoRoot = Join-Path $Root "proto"
 $RuntimeOut = Join-Path $Root "runtime"
 $GatewayOut = Join-Path $Root "gateway"
-$ClawPB = Join-Path $Root "claw_agent\src\claw_agent\pb"
-$AgentsPB = Join-Path $Root "agents\src\piper_agent\pb"
+$ClawPB = Join-Path $Root "web_crawler_agent\src\web_crawler_agent\pb"
+$AgentsPB = Join-Path $Root "general_agent\src\piper_agent\pb"
 
 New-Item -ItemType Directory -Force -Path (Join-Path $RuntimeOut "pkg\pb") | Out-Null
 New-Item -ItemType Directory -Force -Path $ClawPB | Out-Null
@@ -44,7 +44,7 @@ protoc `
   --go-grpc_out=$GatewayOut --go-grpc_opt=module=piper_agent/gateway `
   $agentFiles
 
-# agent/v1 契约同时供 claw_agent 与 agents 两个 Python 项目使用
+# agent/v1 契约同时供 web_crawler_agent 与 general_agent 两个 Python 项目使用
 python -m grpc_tools.protoc `
   -I $ProtoRoot `
   --python_out=$ClawPB `

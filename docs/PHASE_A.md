@@ -6,13 +6,13 @@
 |----|------|
 | Protobuf 契约 | `proto/common/v1/*`, `proto/runtime/v1/*` |
 | 生成 Go 代码 | `runtime/pkg/pb/**`（`scripts/gen_proto.ps1`） |
-| 生成 Python 代码 | `agents/src/piper_agent/pb/**` |
+| 生成 Python 代码 | `web_crawler_agent/src/web_crawler_agent/pb/**`（全量）、`general_agent/src/piper_agent/pb/**`（仅 agent/v1） |
 | Mock Runtime（Go） | `runtime/internal/mock`, `runtime/cmd/piper-runtime` |
 | gRPC Server | `runtime/internal/grpcserver` |
-| Python gRPC 客户端 | `agents/src/piper_agent/clients/runtime_client.py` |
-| 最小 Harness REPL | `agents/src/piper_agent/harness/repl.py` |
+| Python gRPC 客户端 | `web_crawler_agent/src/web_crawler_agent/clients/runtime_client.py` |
+| 最小 Harness REPL | `web_crawler_agent/src/web_crawler_agent/harness/`（现 CLI 仅保留 `web-crawler-agent doctor`） |
 | RPC 错误约定 | `docs/RPC_ERRORS.md` |
-| 冒烟测试 | `agents/tests/test_phase_a_smoke.py`, `runtime/internal/mock/runtime_test.go` |
+| 冒烟测试 | `web_crawler_agent/tests/test_phase_a_smoke.py`, `runtime/internal/mock/runtime_test.go` |
 
 ## 本地运行
 
@@ -25,12 +25,12 @@ go build -o piper-runtime.exe ./cmd/piper-runtime
 # 或指定配置：.\piper-runtime.exe -f ..\deploy\config\local.yaml
 ```
 
-### 2. Python REPL
+### 2. Python REPL（历史：Web 化后 REPL 已下线，CLI 仅保留 doctor）
 
 ```powershell
-cd piper_agent\agents
+cd piper_agent\web_crawler_agent
 pip install -e .
-piper-agent repl --runtime localhost:50051
+web-crawler-agent doctor --runtime localhost:50051
 ```
 
 REPL 命令：
@@ -43,7 +43,7 @@ REPL 命令：
 
 ```powershell
 $env:PIPER_RUNTIME_ADDR="localhost:50051"
-python piper_agent\agents\tests\test_phase_a_smoke.py
+python piper_agent\web_crawler_agent\tests\test_phase_a_smoke.py
 ```
 
 ## Mock 行为说明

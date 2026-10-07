@@ -4,12 +4,12 @@
 
 | 项 | 位置 |
 |----|------|
-| 工具 `template_author_*` | `agents/tools/handlers.py` |
+| 工具 `template_author_*` | `web_crawler_agent/src/web_crawler_agent/tools/handlers.py` |
 | 工具 `param_filler_suggest` | 同上 |
 | 工具 `runner_*` | 同上 |
-| RAG | `agents/rag/template_index.py` + `shared/examples/templates/` |
-| Harness 循环 | `agents/harness/loop.py`, `registry.py`, `session.py`, `policies.py` |
-| Orchestrator | `agents/agents/orchestrator.py` |
+| RAG | `web_crawler_agent/src/web_crawler_agent/rag/template_index.py` + `shared/examples/templates/` |
+| Harness 循环 | `web_crawler_agent/src/web_crawler_agent/harness/loop.py`, `registry.py`, `session.py`, `policies.py` |
+| Orchestrator | `web_crawler_agent/src/web_crawler_agent/agents/orchestrator.py` |
 | 强校验 diagnostics | `engine/pkg/agentruntime/validate.go` |
 | 示例模版 | `shared/examples/templates/*.json` |
 
@@ -22,10 +22,9 @@ cd piper_agent\runtime
 .\piper-runtime.exe -f ..\deploy\config\local.yaml
 
 # 3. LLM chat（Runtime 地址在同文件 runtime.address）
-cd piper_agent\agents
+cd piper_agent\web_crawler_agent
 pip install -e ".[llm]"
-piper-agent doctor   # 先确认 Runtime 可达
-piper-agent chat
+web-crawler-agent doctor   # 先确认 Runtime 可达；对话入口已改为 Web（见根 README）
 ```
 
 `llm.api_key` 说明：在 [OpenAI API Keys](https://platform.openai.com/api-keys) 创建的密钥（`sk-...`）；若用 DeepSeek 等 OpenAI 兼容 API，同时设置 `llm.base_url` 与对应 key。含密钥的 `local.yaml` 已 gitignore。
@@ -39,4 +38,4 @@ piper-agent chat
 
 ## 无 LLM 调试
 
-仍可使用 `piper-agent repl` 手动调用 Runtime。
+可使用 `web-crawler-agent doctor` 检查 Runtime 连通性；手动对话调试请走 Web 界面。

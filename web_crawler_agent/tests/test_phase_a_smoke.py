@@ -5,8 +5,8 @@ import sys
 
 import grpc
 
-from claw_agent.clients.runtime_client import RuntimeClient
-from claw_agent.pb.common.v1 import types_pb2
+from web_crawler_agent.clients.runtime_client import RuntimeClient
+from web_crawler_agent.pb.common.v1 import types_pb2
 
 ADDR = os.environ.get("PIPER_RUNTIME_ADDR", "localhost:50051")
 
