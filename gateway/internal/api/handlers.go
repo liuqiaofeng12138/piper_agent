@@ -114,7 +114,9 @@ func (s *Server) createConversation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listConversations(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"conversations": s.deps.Store.ListConversations()})
+	writeJSON(w, http.StatusOK, map[string]any{
+		"conversations": session.CoalesceConversations(s.deps.Store.ListConversations()),
+	})
 }
 
 func (s *Server) listMessages(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +127,7 @@ func (s *Server) listMessages(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"conversation_id": id,
-		"messages":        s.deps.Store.ListMessages(id),
+		"messages":        session.CoalesceMessages(s.deps.Store.ListMessages(id)),
 	})
 }
 

@@ -10,7 +10,8 @@
 | [src/piper_agent/tools/](src/piper_agent/tools/) | 工具实现（gRPC 客户端封装） |
 | [src/piper_agent/agents/](src/piper_agent/agents/) | 具体 Agent：Orchestrator、TemplateAuthor、Runner |
 | [src/piper_agent/clients/](src/piper_agent/clients/) | gRPC channel、重试、超时 |
-| [src/piper_agent/cli/](src/piper_agent/cli/) | `piper-agent chat` / `run` |
+| [src/piper_agent/cli/](src/piper_agent/cli/) | 仅 `piper-agent doctor`（Runtime 连通性检查） |
+| [src/piper_agent/workers/](src/piper_agent/workers/) | gRPC Worker（Web 网关调用，如 `web_crawler`） |
 | [tests/](tests/) | Harness 与 tool 的单元/集成测试 |
 
 ## 安装（规划）

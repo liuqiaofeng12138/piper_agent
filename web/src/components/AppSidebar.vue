@@ -8,6 +8,8 @@ const store = useChatStore()
 const route = useRoute()
 const router = useRouter()
 
+const conversationList = computed(() => store.conversations ?? [])
+
 const activeId = computed(() => {
   const id = route.params.conversationId
   return typeof id === 'string' ? id : store.activeConversationId
@@ -32,7 +34,7 @@ function selectConversation(id: string) {
     <div class="history-label">历史对话</div>
     <nav class="history">
       <button
-        v-for="c in store.conversations"
+        v-for="c in conversationList"
         :key="c.id"
         type="button"
         class="history-item"
@@ -41,7 +43,7 @@ function selectConversation(id: string) {
       >
         <span class="title">{{ c.title }}</span>
       </button>
-      <p v-if="!store.conversations.length" class="empty">暂无历史，发送消息开始对话</p>
+      <p v-if="conversationList.length === 0" class="empty">暂无历史，发送消息开始对话</p>
     </nav>
     <footer class="sidebar-foot">
       <span class="phase">Phase W2 · 真实 Agent</span>
@@ -53,8 +55,11 @@ function selectConversation(id: string) {
 .sidebar {
   width: 260px;
   flex-shrink: 0;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--ds-sidebar);
   border-right: 1px solid var(--ds-sidebar-border);
   padding: 16px 12px;
@@ -102,7 +107,9 @@ function selectConversation(id: string) {
 }
 .history {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 2px;

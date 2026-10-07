@@ -105,7 +105,7 @@ agents:
   - id: web_crawler
     display_name: "网页采集"
     description: "自然语言描述采集任务，生成 Piper 模版并执行抓取"
-    endpoint: "127.0.0.1:50061"   # Python web_crawler worker gRPC
+    endpoint: "127.0.0.1:15061"   # Python web_crawler worker gRPC（避开 Windows 保留端口段）
     enabled: true
     intents: ["web_scrape", "crawl", "piper_collect", "default"]  # default 表示兜底
   # 预留
@@ -132,7 +132,7 @@ agents:
 
 - 代码复用：`agents/src/piper_agent/agents/orchestrator.py` 的 `create_loop()`、`AgentLoop.run_turn()`（需改造为 **逐事件 yield**：assistant token、tool_start、tool_end、run_progress）。
 - 对 Runtime：继续使用 `RuntimeClient` → `runtime.address`（与 today 的 `local.yaml` 一致）。
-- 进程形态：新增入口，例如 `piper-agent worker web-crawler --listen :50061`，内部启动 gRPC `AgentService.Execute(stream)`。
+- 进程形态：由 `piper-serve` 子进程启动 `python -m piper_agent.workers.web_crawler`（gRPC `AgentWorkerService.Execute`），**不提供 CLI 入口**。
 
 **用户可见事件类型**（经网关转为 SSE）：
 
@@ -291,16 +291,16 @@ gateway:
 
 agents:
   web_crawler:
-    listen: ":50061"
+    listen: "127.0.0.1:15061"
 ```
 
 ### 7.2 推荐启动顺序（开发）
 
 1. 依赖：ES / MinIO 等（见 [docs/PHASE_B.md](docs/PHASE_B.md)）。
-2. `piper-runtime -f deploy/config/local.yaml`
-3. `piper-agent worker web-crawler -f deploy/config/local.yaml`
-4. `piper-gateway -f deploy/config/local.yaml`
-5. `cd web && npm run dev` → 浏览器访问 Vite 端口。
+2. **一键后端**：`cd gateway && go run ./cmd/piper-serve -f ../deploy/config/local.yaml`（内部拉起 Runtime、Worker、网关）。
+3. `cd web && npm run dev` → 浏览器访问 Vite 端口。
+
+单独调试时可使用 `piper-runtime`、`python -m piper_agent.workers.web_crawler`、`piper-gateway` 分进程启动。
 
 生产：Nginx 托管 `web` 静态资源，`/api` 反代 `gateway`；TLS 在 Nginx 终止。
 
@@ -380,7 +380,7 @@ agents:
 
 | 已有能力 | Web 系统中的位置 |
 |----------|------------------|
-| `piper-agent chat` / `ask` | 逻辑迁入 `web_crawler` worker；CLI 保留 |
+| `piper-agent chat` / `ask` | 已移除；仅保留 `piper-agent doctor` 运维检查 |
 | `AgentLoop` + `ToolHandlers` | Python worker 内核 |
 | `piper-runtime` gRPC | 仅 web_crawler 调用 |
 | `engine` WebSocket 进度 | 可选：网关订阅并转为 `run.progress` SSE；或 worker 轮询 `SubscribeRun` |

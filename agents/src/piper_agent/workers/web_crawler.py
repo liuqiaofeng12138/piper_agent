@@ -108,13 +108,27 @@ class WebCrawlerServicer(execute_pb2_grpc.AgentWorkerServiceServicer):
         return execute_pb2.HealthResponse(status="ok", agent_id="web_crawler")
 
 
+def _bind_grpc_port(server: grpc.Server, addr: str) -> None:
+    try:
+        bound = server.add_insecure_port(addr)
+    except RuntimeError as e:
+        raise RuntimeError(
+            f"无法在 {addr} 绑定 gRPC Worker：{e}\n"
+            "在 Windows 上 50000–50100 等端口常被系统保留（错误 10013）。"
+            "请在 deploy/config/local.yaml 中设置 agents.web_crawler.listen，"
+            "例如 127.0.0.1:15061，并与 gateway 使用同一地址。"
+        ) from e
+    if bound == 0:
+        raise RuntimeError(f"无法在 {addr} 绑定 gRPC Worker（add_insecure_port 返回 0）")
+
+
 def serve(config_path: str | None, listen: str | None = None) -> None:
-    cfg = load_agent_config(config_path)
+    _ = load_agent_config(config_path)
     addr = listen or worker_listen_address(config_path)
     servicer = WebCrawlerServicer(config_path)
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=8))
     execute_pb2_grpc.add_AgentWorkerServiceServicer_to_server(servicer, server)
-    server.add_insecure_port(addr)
+    _bind_grpc_port(server, addr)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     logger.info("web-crawler worker listening on %s", addr)
     server.start()
@@ -127,3 +141,32 @@ def serve(config_path: str | None, listen: str | None = None) -> None:
 
 def main(config_path: str | None, listen: str | None) -> None:
     serve(config_path, listen)
+
+
+def _cli() -> None:
+    import argparse
+    from pathlib import Path
+
+    from piper_agent.config.loader import default_config_path
+
+    parser = argparse.ArgumentParser(
+        prog="piper-agent-web-crawler",
+        description="Web 采集子 Agent gRPC Worker（由 piper-serve 拉起，非 CLI 入口）",
+    )
+    parser.add_argument(
+        "--config",
+        default=str(default_config_path()),
+        help="deploy/config/local.yaml",
+    )
+    parser.add_argument(
+        "--listen",
+        default=None,
+        help="override agents.web_crawler.listen",
+    )
+    args = parser.parse_args()
+    cfg = args.config if Path(args.config).is_file() else None
+    main(cfg, args.listen)
+
+
+if __name__ == "__main__":
+    _cli()

@@ -29,6 +29,7 @@ body,
 #app {
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
 body {
@@ -36,6 +37,19 @@ body {
   color: var(--ds-text);
   background: var(--ds-bg);
   -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 路由根节点（ChatLayout 的 .layout）占满剩余高度 */
+#app > * {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
 }
 
 button {

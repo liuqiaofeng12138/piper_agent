@@ -47,7 +47,8 @@ python -m grpc_tools.protoc `
   --grpc_python_out=$AgentsPB `
   $agentFiles
 
+python (Join-Path $PSScriptRoot "fix_pb_imports.py")
+
 Write-Host "Go stubs -> $RuntimeOut\pkg\pb"
 Write-Host "Go agent stubs -> $GatewayOut\pkg\pb"
-Write-Host "Python stubs -> $AgentsPB"
-Write-Host "Note: fix Python imports to piper_agent.pb.* in *_pb2*.py if regenerated"
+Write-Host "Python stubs -> $AgentsPB (imports fixed via fix_pb_imports.py)"

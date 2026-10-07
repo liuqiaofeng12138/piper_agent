@@ -21,7 +21,7 @@ proto/
 ## 生成代码
 
 - Go：`scripts/gen_proto_go.sh` → `runtime/pkg/pb/`
-- Python：`scripts/gen_proto_py.sh` → `agents/src/piper_agent/pb/`
+- Python：`scripts/gen_proto.ps1` → `agents/src/piper_agent/pb/`（随后自动运行 `scripts/fix_pb_imports.py` 修正 `piper_agent.pb.*` 导入）
 
 ## 约定
 

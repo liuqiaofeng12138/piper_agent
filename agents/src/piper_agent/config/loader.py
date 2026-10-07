@@ -84,12 +84,12 @@ def _apply_raw(cfg: AgentConfig, raw: dict[str, Any]) -> None:
 def worker_listen_address(path: str | Path | None = None) -> str:
     config_file = Path(path) if path else default_config_path()
     if not config_file.is_file():
-        return "127.0.0.1:50061"
+        return "127.0.0.1:15061"
     raw: dict[str, Any] = yaml.safe_load(config_file.read_text(encoding="utf-8")) or {}
     agents = raw.get("agents") or {}
     wc = agents.get("web_crawler") or {}
     listen = wc.get("listen") or wc.get("address")
-    return str(listen or "127.0.0.1:50061")
+    return str(listen or "127.0.0.1:15061")
 
 
 def _find_repo_root() -> Path | None:

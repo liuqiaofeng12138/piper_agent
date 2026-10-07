@@ -4,15 +4,14 @@ Vue 3 + TypeScript 对话界面，风格参考 DeepSeek 网页版。
 
 ## 开发
 
-1. 启动 Runtime 与 Python Worker（见根目录 README「Web 对话」）。
-2. 启动网关：
+1. 一键后端（Runtime + Worker + 网关）：
 
    ```powershell
    cd gateway
-   go run ./cmd/piper-gateway -f ../deploy/config/local.yaml
+   go run ./cmd/piper-serve -f ../deploy/config/local.yaml
    ```
 
-3. 安装依赖并启动前端：
+2. 安装依赖并启动前端：
 
    ```powershell
    cd web

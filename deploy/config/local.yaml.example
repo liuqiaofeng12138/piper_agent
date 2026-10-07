@@ -60,7 +60,7 @@ gateway:
 
 agents:
   web_crawler:
-    listen: "127.0.0.1:50061"
+    listen: "127.0.0.1:15061"
     enabled: true
 
 llm:

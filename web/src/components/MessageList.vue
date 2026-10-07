@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Message } from '@/api/types'
-import { renderSimpleMarkdown } from '@/utils/format'
+import { renderMarkdown } from '@/utils/markdown'
 
 defineProps<{
   messages: Message[]
@@ -44,8 +44,8 @@ defineProps<{
             </div>
             <div
               v-if="msg.content"
-              class="md"
-              v-html="renderSimpleMarkdown(msg.content)"
+              class="md-body"
+              v-html="renderMarkdown(msg.content)"
             />
             <span v-else-if="msg.streaming" class="typing">正在思考</span>
             <span v-if="msg.streaming && msg.content" class="cursor">▍</span>
@@ -58,9 +58,9 @@ defineProps<{
 
 <style scoped>
 .messages {
-  flex: 1;
-  overflow-y: auto;
+  height: 100%;
   padding: 24px 0 120px;
+  box-sizing: border-box;
 }
 .loading {
   text-align: center;
@@ -116,9 +116,7 @@ defineProps<{
   line-height: 1.75;
   color: var(--ds-text);
   word-break: break-word;
-}
-.bubble.assistant .md :deep(strong) {
-  font-weight: 600;
+  min-width: 0;
 }
 .steps {
   margin-bottom: 12px;
@@ -148,6 +146,104 @@ defineProps<{
   border-top: 1px solid var(--ds-input-border);
   max-height: 200px;
   overflow: auto;
+}
+/* Markdown 正文（助手回答） */
+.md-body :deep(p) {
+  margin: 0 0 0.75em;
+}
+.md-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+.md-body :deep(h1),
+.md-body :deep(h2),
+.md-body :deep(h3),
+.md-body :deep(h4) {
+  margin: 1em 0 0.5em;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.md-body :deep(h1) {
+  font-size: 1.35em;
+}
+.md-body :deep(h2) {
+  font-size: 1.2em;
+}
+.md-body :deep(h3) {
+  font-size: 1.05em;
+}
+.md-body :deep(ul),
+.md-body :deep(ol) {
+  margin: 0.5em 0 0.75em;
+  padding-left: 1.5em;
+}
+.md-body :deep(li) {
+  margin: 0.25em 0;
+}
+.md-body :deep(li > p) {
+  margin: 0.25em 0;
+}
+.md-body :deep(blockquote) {
+  margin: 0.75em 0;
+  padding: 0.35em 0 0.35em 1em;
+  border-left: 3px solid #c7d2fe;
+  color: var(--ds-text-secondary);
+  background: #f8faff;
+  border-radius: 0 6px 6px 0;
+}
+.md-body :deep(code) {
+  font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #1e293b;
+}
+.md-body :deep(pre) {
+  margin: 0.75em 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #e2e8f0;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.md-body :deep(pre code) {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+}
+.md-body :deep(a) {
+  color: var(--ds-primary);
+  text-decoration: none;
+}
+.md-body :deep(a:hover) {
+  text-decoration: underline;
+}
+.md-body :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75em 0;
+  font-size: 14px;
+}
+.md-body :deep(th),
+.md-body :deep(td) {
+  border: 1px solid var(--ds-input-border);
+  padding: 8px 10px;
+  text-align: left;
+}
+.md-body :deep(th) {
+  background: #f9fafb;
+  font-weight: 600;
+}
+.md-body :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--ds-input-border);
+  margin: 1em 0;
+}
+.md-body :deep(strong) {
+  font-weight: 600;
 }
 .typing {
   color: var(--ds-text-muted);

@@ -22,7 +22,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from common.v1 import types_pb2 as common_dot_v1_dot_types__pb2
+from piper_agent.pb.common.v1 import types_pb2 as common_dot_v1_dot_types__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x19runtime/v1/template.proto\x12\nruntime.v1\x1a\x15\x63ommon/v1/types.proto\"\x8b\x01\n\x17ValidateTemplateRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12(\n\x08template\x18\x02 \x01(\x0b\x32\x16.common.v1.TemplateDoc\x12\x13\n\x0btemplate_id\x18\x03 \x01(\t\x12\x1d\n\x04vars\x18\x04 \x01(\x0b\x32\x0f.common.v1.Vars\"R\n\x18ValidateTemplateResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12*\n\x0b\x64iagnostics\x18\x02 \x03(\x0b\x32\x15.common.v1.Diagnostic\"U\n\x15UpsertTemplateRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12(\n\x08template\x18\x02 \x01(\x0b\x32\x16.common.v1.TemplateDoc\"-\n\x16UpsertTemplateResponse\x12\x13\n\x0btemplate_id\x18\x01 \x01(\t2\xc9\x01\n\x0fRuntimeTemplate\x12]\n\x10ValidateTemplate\x12#.runtime.v1.ValidateTemplateRequest\x1a$.runtime.v1.ValidateTemplateResponse\x12W\n\x0eUpsertTemplate\x12!.runtime.v1.UpsertTemplateRequest\x1a\".runtime.v1.UpsertTemplateResponseB1Z/piper_agent/runtime/pkg/pb/runtime/v1;runtimev1b\x06proto3')

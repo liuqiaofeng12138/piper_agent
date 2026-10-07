@@ -10,7 +10,7 @@ LLM 驱动的控制循环，是用户与 Go Runtime 之间的**唯一编排入�
 | `loop.py` | `run_turn()`：调用 LLM → 解析 tool_calls → 执行 → 追加结果 |
 | `registry.py` | `ToolRegistry`：名称、schema、handler、权限 |
 | `policies.py` | 必须先 validate 再 run；最大步数；敏感确认 |
-| `events.py` | 结构化事件供 CLI/Web 订阅 |
+| `events.py` | 结构化事件供 Web / Worker 订阅 |
 
 ## 与 Go Runtime Harness 的关系
 

@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from runtime.v1 import meta_pb2 as runtime_dot_v1_dot_meta__pb2
+from piper_agent.pb.runtime.v1 import meta_pb2 as runtime_dot_v1_dot_meta__pb2
 
 GRPC_GENERATED_VERSION = '1.84.0'
 GRPC_VERSION = grpc.__version__

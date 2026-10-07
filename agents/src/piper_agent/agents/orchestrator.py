@@ -37,22 +37,3 @@ def create_loop(config_path: str | None, runtime_addr: str | None) -> tuple[Agen
     registry = ToolRegistry(handlers)
     loop = AgentLoop(registry, session, cfg, llm_client=llm)
     return loop, client
-
-
-def chat_repl(config_path: str | None, runtime_addr: str | None) -> None:
-    loop, client = create_loop(config_path, runtime_addr)
-    print(f"Piper Agent chat (Phase C) session={loop.session.session_id}")
-    print("Describe a collection task in natural language. Type quit to exit.")
-    try:
-        while True:
-            try:
-                line = input("you> ").strip()
-            except (EOFError, KeyboardInterrupt):
-                print()
-                break
-            if not line or line.lower() in ("quit", "exit", "q"):
-                break
-            reply = loop.run_turn(line)
-            print(f"agent> {reply}")
-    finally:
-        client.close()

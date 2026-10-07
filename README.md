@@ -31,16 +31,24 @@
 - **Harness（Python）**：会话状态 + LLM + ToolRegistry，把自然语言变成结构化 Run 请求。
 - **Runtime（Go）**：校验模版、调度 Token、管理 Proxy/Chrome Agent、写 ES/S3。
 
-## Web 对话（Phase W2）
+## Web 对话（推荐一键后端）
 
-1. 启动 Runtime：`cd runtime && go run ./cmd/piper-runtime -f ../deploy/config/local.yaml`
-2. 启动采集 Worker：`cd agents && pip install -e ".[llm]" && piper-agent worker web-crawler -f ../deploy/config/local.yaml`
-3. 启动网关：`cd gateway && go run ./cmd/piper-gateway -f ../deploy/config/local.yaml`
-4. 启动前端：`cd web && npm install && npm run dev` → 浏览器打开 Vite 地址
+**一条命令拉起 Runtime + Agent Worker + 网关**（需已 `pip install -e agents/.[llm]` 或 `agents/.venv`）：
+
+```powershell
+cd gateway
+go run ./cmd/piper-serve -f ../deploy/config/local.yaml
+```
+
+或：`powershell -File scripts/start-web.ps1`
+
+再开前端：`cd web && npm run dev`
+
+仅单独调试网关时仍可用 `go run ./cmd/piper-gateway`（需自行启动 Runtime 与 Worker）。
 
 详见 [web/README.md](web/README.md) 与 [web设计方案.md](web设计方案.md)。
 
-## 本地联调（CLI + Runtime）
+## 本地联调（Runtime 与依赖）
 
 1. 复制 [deploy/config/local.yaml.example](deploy/config/local.yaml.example) 为 `local.yaml`，填写 `llm.api_key`（见 [Phase C](docs/PHASE_C.md)）。
 2. 编译并启动 Runtime（需 ES/S3 等，见 [Phase B](docs/PHASE_B.md)）：
@@ -50,6 +58,5 @@
    .\piper-runtime.exe -f ..\deploy\config\local.yaml
    ```
    默认 `-f` 即 `../deploy/config/local.yaml`，在 `runtime` 目录下也可省略。
-3. Agent：`cd agents && pip install -e ".[llm]" && piper-agent chat`（同样读取 `local.yaml`）
 
-无需设置 `OPENAI_API_KEY` 等环境变量。
+**Agent 对话请使用 Web 界面**（见上文「Web 对话」）；CLI 仅保留 `piper-agent doctor` 检查 Runtime 连通性。

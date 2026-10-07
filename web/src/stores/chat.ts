@@ -13,16 +13,30 @@ export const useChatStore = defineStore('chat', () => {
   let abortController: AbortController | null = null
 
   async function refreshConversations() {
-    const { conversations: list } = await listConversations()
-    conversations.value = list
+    try {
+      const { conversations: list } = await listConversations()
+      conversations.value = Array.isArray(list) ? list : []
+    } catch {
+      conversations.value = []
+    }
   }
 
-  async function loadConversation(id: string) {
+  /** @returns false 表示会话在后端不存在（如重启后旧链接） */
+  async function loadConversation(id: string): Promise<boolean> {
     loadingHistory.value = true
-    activeConversationId.value = id
     try {
       const { messages: list } = await listMessages(id)
-      messages.value = list
+      activeConversationId.value = id
+      messages.value = Array.isArray(list) ? list : []
+      return true
+    } catch (e) {
+      const msg = (e as Error).message ?? ''
+      if (msg.includes('conversation not found') || msg.includes('404')) {
+        activeConversationId.value = null
+        messages.value = []
+        return false
+      }
+      throw e
     } finally {
       loadingHistory.value = false
     }
@@ -58,11 +72,11 @@ export const useChatStore = defineStore('chat', () => {
     abortController = new AbortController()
     currentRunId.value = null
 
-    try {
+    const runStream = async (conversationId?: string) => {
       await chatStream({
-        conversationId: activeConversationId.value ?? undefined,
+        conversationId,
         message: trimmed,
-        signal: abortController.signal,
+        signal: abortController!.signal,
         onEvent: (ev: StreamEvent) => {
           if (ev.conversation_id && !activeConversationId.value) {
             activeConversationId.value = ev.conversation_id
@@ -98,6 +112,23 @@ export const useChatStore = defineStore('chat', () => {
           }
         },
       })
+    }
+
+    try {
+      try {
+        await runStream(activeConversationId.value ?? undefined)
+      } catch (e) {
+        const msg = (e as Error).message ?? ''
+        if (
+          activeConversationId.value &&
+          (msg.includes('conversation not found') || msg.includes('404'))
+        ) {
+          activeConversationId.value = null
+          await runStream(undefined)
+        } else {
+          throw e
+        }
+      }
     } catch (e) {
       if ((e as Error).name !== 'AbortError') {
         assistantMsg.content = `请求失败：${(e as Error).message}`

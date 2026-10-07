@@ -20,18 +20,23 @@ const suggestions = [
   '用 Chrome 模式抓取需要登录的列表页',
 ]
 
-onMounted(async () => {
-  const id = props.conversationId
-  if (id) {
-    await store.loadConversation(id)
+async function syncRouteConversation(id: string | undefined) {
+  if (!id) return
+  const ok = await store.loadConversation(id)
+  if (!ok) {
+    await router.replace({ name: 'chat-new' })
   }
+}
+
+onMounted(() => {
+  void syncRouteConversation(props.conversationId)
 })
 
 watch(
   () => route.params.conversationId,
-  async (id) => {
+  (id) => {
     if (typeof id === 'string') {
-      await store.loadConversation(id)
+      void syncRouteConversation(id)
     }
   },
 )
@@ -57,7 +62,7 @@ function onSuggestion(text: string) {
     </header>
 
     <div class="content">
-      <div v-if="isEmpty" class="welcome">
+      <div v-if="isEmpty" class="welcome scroll-pane">
         <div class="welcome-logo">
           <img src="/favicon.svg" alt="" width="48" height="48" />
         </div>
@@ -77,6 +82,7 @@ function onSuggestion(text: string) {
       </div>
       <MessageList
         v-else
+        class="scroll-pane"
         :messages="store.messages"
         :loading="store.loadingHistory"
       />
@@ -122,14 +128,25 @@ function onSuggestion(text: string) {
 .content {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   position: relative;
 }
+.scroll-pane {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
 .welcome {
   max-width: 720px;
+  width: 100%;
   margin: 0 auto;
   padding: 80px 24px 140px;
   text-align: center;
+  box-sizing: border-box;
 }
 .welcome-logo {
   margin-bottom: 20px;

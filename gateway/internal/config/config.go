@@ -53,7 +53,7 @@ func Load(path string) (*Config, error) {
 		Classifier:         ClassifierConfig{Mode: "rule"},
 		ChatTimeoutSeconds: 600,
 		Agents: AgentsConfig{
-			WebCrawler: AgentEndpoint{Address: "127.0.0.1:50061", Enabled: true},
+			WebCrawler: AgentEndpoint{Address: "127.0.0.1:15061", Enabled: true},
 		},
 	}
 	if path == "" {

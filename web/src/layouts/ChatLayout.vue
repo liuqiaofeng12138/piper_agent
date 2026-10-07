@@ -35,8 +35,10 @@ function onNewChat() {
 .main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--ds-bg);
 }
 </style>
