@@ -4,9 +4,13 @@
 
 # Python
 /agents/.venv/
+/claw_agent/.venv/
 /agents/**/__pycache__/
+/claw_agent/**/__pycache__/
 /agents/**/*.egg-info/
+/claw_agent/**/*.egg-info/
 /agents/.pytest_cache/
+/claw_agent/.pytest_cache/
 
 # Local secrets & logs
 /deploy/config/local.yaml

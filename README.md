@@ -17,7 +17,8 @@
 | [proto/](proto/) | IDL | gRPC / protobuf 契约 |
 | [engine/](engine/) | Go | Piper 采集内核（Go 模块名 `piper_go`：模版、分发、ES/S3） |
 | [runtime/](runtime/) | Go | Agent Runtime gRPC Server，内嵌调用 `engine` |
-| [agents/](agents/) | Python | LLM Agent、Harness 循环、Tool 客户端 |
+| [claw_agent/](claw_agent/) | Python | Web 采集子 Agent：LLM Harness、工具链、`web_crawler` Worker |
+| [agents/](agents/) | Python | 平台通用子 Agent Workers（`general_chat` 等） |
 | [gateway/](gateway/) | Go | Web API 网关（SSE 对话、会话，Phase W1+） |
 | [web/](web/) | Vue + TS | 对话前端 |
 | [shared/](shared/) | 中性 | JSON Schema、示例模版、Prompt 片段 |
@@ -33,7 +34,7 @@
 
 ## Web 对话（推荐一键后端）
 
-**一条命令拉起 Runtime + Agent Worker + 网关**（需已 `pip install -e agents/.[llm]` 或 `agents/.venv`）：
+**一条命令拉起 Runtime + Agent Worker + 网关**（需已 `uv pip install -e claw_agent/[llm]` 或存在 `agents/.venv`）：
 
 ```powershell
 cd gateway
@@ -59,4 +60,4 @@ go run ./cmd/piper-serve -f ../deploy/config/local.yaml
    ```
    默认 `-f` 即 `../deploy/config/local.yaml`，在 `runtime` 目录下也可省略。
 
-**Agent 对话请使用 Web 界面**（见上文「Web 对话」）；CLI 仅保留 `piper-agent doctor` 检查 Runtime 连通性。
+**Agent 对话请使用 Web 界面**（见上文「Web 对话」）；CLI 仅保留 `claw-agent doctor` 检查 Runtime 连通性。

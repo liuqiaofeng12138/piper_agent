@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -133,11 +134,10 @@ func startRuntime(ctx context.Context, configPath string, repoRoot string) (*exe
 }
 
 func startWorker(ctx context.Context, configPath string, repoRoot string, agent config.AgentSpec) (*exec.Cmd, error) {
-	agentsDir := filepath.Join(repoRoot, "agents")
-	name, args, env := workerCommand(configPath, agentsDir, agent)
+	name, args, env := workerCommand(configPath, repoRoot, agent)
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Env = append(os.Environ(), env...)
-	cmd.Dir = agentsDir
+	cmd.Dir = repoRoot
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
@@ -146,10 +146,15 @@ func startWorker(ctx context.Context, configPath string, repoRoot string, agent 
 	return cmd, nil
 }
 
-// workerCommand 启动 gRPC Worker（python -m <agent.Module>），不经 piper-agent CLI。
-func workerCommand(configPath string, agentsDir string, agent config.AgentSpec) (string, []string, []string) {
+// workerCommand 启动 gRPC Worker（python -m <agent.Module>），不经 CLI。
+// PYTHONPATH 同时覆盖 claw_agent（采集 Agent）与 agents（通用 Agent）两个 Python 项目。
+func workerCommand(configPath string, repoRoot string, agent config.AgentSpec) (string, []string, []string) {
+	srcDirs := []string{
+		filepath.Join(repoRoot, "claw_agent", "src"),
+		filepath.Join(repoRoot, "agents", "src"),
+	}
 	extraEnv := []string{
-		fmt.Sprintf("PYTHONPATH=%s", filepath.Join(agentsDir, "src")),
+		fmt.Sprintf("PYTHONPATH=%s", strings.Join(srcDirs, string(os.PathListSeparator))),
 	}
 	moduleArgs := []string{
 		"-m", agent.WorkerModule(),
@@ -161,12 +166,15 @@ func workerCommand(configPath string, agentsDir string, agent config.AgentSpec) 
 		return override, moduleArgs, extraEnv
 	}
 
-	venvPy := filepath.Join(agentsDir, ".venv", "Scripts", "python.exe")
-	if runtime.GOOS != "windows" {
-		venvPy = filepath.Join(agentsDir, ".venv", "bin", "python")
-	}
-	if fileExists(venvPy) {
-		return venvPy, moduleArgs, extraEnv
+	// 优先 claw_agent/.venv，其次 agents/.venv（两者依赖相同，可共用）
+	for _, proj := range []string{"claw_agent", "agents"} {
+		venvPy := filepath.Join(repoRoot, proj, ".venv", "Scripts", "python.exe")
+		if runtime.GOOS != "windows" {
+			venvPy = filepath.Join(repoRoot, proj, ".venv", "bin", "python")
+		}
+		if fileExists(venvPy) {
+			return venvPy, moduleArgs, extraEnv
+		}
 	}
 
 	py := "python"

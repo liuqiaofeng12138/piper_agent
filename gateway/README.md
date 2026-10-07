@@ -11,9 +11,9 @@ cd gateway
 go run ./cmd/piper-serve -f ../deploy/config/local.yaml
 ```
 
-按顺序子进程启动 `piper-runtime`，再为 `agents` 注册表中每个 `enabled: true` 的 Agent 拉起对应 Python Worker（`python -m <module>`，模块默认 `piper_agent.workers.<id>`），最后在本进程监听 HTTP（默认 `:8080`）。  
+按顺序子进程启动 `piper-runtime`，再为 `agents` 注册表中每个 `enabled: true` 的 Agent 拉起对应 Python Worker（`python -m <module>`，由注册表 `module` 字段指定），最后在本进程监听 HTTP（默认 `:8080`）。  
 优先使用 `runtime/piper-runtime.exe`（若已编译），否则 `go run ./cmd/piper-runtime`。  
-Python 优先 `agents/.venv`，否则系统 `python` / `python3`。
+Python 优先 `claw_agent/.venv`，其次 `agents/.venv`，否则系统 `python` / `python3`；Worker 的 `PYTHONPATH` 同时覆盖 `claw_agent/src` 与 `agents/src`。
 
 环境变量：`PIPER_RUNTIME_CMD` 覆盖 Runtime 可执行文件；`PIPER_WORKER_PYTHON` 覆盖 Worker 用的 Python 解释器。
 

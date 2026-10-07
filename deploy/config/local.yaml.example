@@ -63,18 +63,22 @@ gateway:
     timeout_ms: 4000
 
 # 子 Agent 注册表（列表格式；也兼容旧的 map 格式 agents.web_crawler.listen）
+# module 为该 Agent 的 Python Worker 模块（默认 piper_agent.workers.<id>）；
+# piper-serve 启动时 PYTHONPATH 会同时覆盖 claw_agent/src 与 agents/src。
 agents:
   - id: web_crawler
     display_name: "网页采集"
     description: "自然语言描述网页抓取/数据采集任务，生成 Piper 模版并调用 Runtime 执行"
     listen: "127.0.0.1:15061"
     enabled: true
+    module: claw_agent.workers.web_crawler      # claw_agent 项目（采集专用）
   - id: general_chat
     display_name: "通用对话"
     description: "日常问答、知识咨询、闲聊等非采集类对话"
     listen: "127.0.0.1:15062"
     enabled: true
     default: true       # 意图未命中时的兜底 Agent
+    module: piper_agent.workers.general_chat    # agents 项目（平台通用）
 
 llm:
   provider: openai
