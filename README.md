@@ -18,6 +18,8 @@
 | [engine/](engine/) | Go | Piper 采集内核（Go 模块名 `piper_go`：模版、分发、ES/S3） |
 | [runtime/](runtime/) | Go | Agent Runtime gRPC Server，内嵌调用 `engine` |
 | [agents/](agents/) | Python | LLM Agent、Harness 循环、Tool 客户端 |
+| [gateway/](gateway/) | Go | Web API 网关（SSE 对话、会话，Phase W1+） |
+| [web/](web/) | Vue + TS | 对话前端 |
 | [shared/](shared/) | 中性 | JSON Schema、示例模版、Prompt 片段 |
 | [deploy/](deploy/) | Ops | 本地/容器编排 |
 | [scripts/](scripts/) | Shell/Python | `protoc` 生成、联调启动 |
@@ -29,7 +31,16 @@
 - **Harness（Python）**：会话状态 + LLM + ToolRegistry，把自然语言变成结构化 Run 请求。
 - **Runtime（Go）**：校验模版、调度 Token、管理 Proxy/Chrome Agent、写 ES/S3。
 
-## 本地联调
+## Web 对话（Phase W2）
+
+1. 启动 Runtime：`cd runtime && go run ./cmd/piper-runtime -f ../deploy/config/local.yaml`
+2. 启动采集 Worker：`cd agents && pip install -e ".[llm]" && piper-agent worker web-crawler -f ../deploy/config/local.yaml`
+3. 启动网关：`cd gateway && go run ./cmd/piper-gateway -f ../deploy/config/local.yaml`
+4. 启动前端：`cd web && npm install && npm run dev` → 浏览器打开 Vite 地址
+
+详见 [web/README.md](web/README.md) 与 [web设计方案.md](web设计方案.md)。
+
+## 本地联调（CLI + Runtime）
 
 1. 复制 [deploy/config/local.yaml.example](deploy/config/local.yaml.example) 为 `local.yaml`，填写 `llm.api_key`（见 [Phase C](docs/PHASE_C.md)）。
 2. 编译并启动 Runtime（需 ES/S3 等，见 [Phase B](docs/PHASE_B.md)）：

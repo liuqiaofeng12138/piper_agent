@@ -12,6 +12,13 @@
 /deploy/config/local.yaml
 /logs/
 
+# Web
+/web/node_modules/
+/web/dist/
+
+# Gateway session DB
+/data/
+
 # IDE
 .idea/
 .vscode/

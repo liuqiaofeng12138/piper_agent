@@ -22,7 +22,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from piper_agent.pb.common.v1 import types_pb2 as common_dot_v1_dot_types__pb2
+from common.v1 import types_pb2 as common_dot_v1_dot_types__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18runtime/v1/execute.proto\x12\nruntime.v1\x1a\x15\x63ommon/v1/types.proto\"\xab\x01\n\x12RunTemplateRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x17\n\x0fidempotency_key\x18\x03 \x01(\t\x12\x13\n\x0btemplate_id\x18\x04 \x01(\t\x12\x1d\n\x04vars\x18\x05 \x01(\x0b\x32\x0f.common.v1.Vars\x12\x10\n\x08proxy_id\x18\x06 \x01(\t\x12\x0e\n\x06\x65ngine\x18\x07 \x01(\t\"K\n\x13RunTemplateResponse\x12\x0e\n\x06run_id\x18\x01 \x01(\t\x12$\n\x06status\x18\x02 \x01(\x0b\x32\x14.common.v1.RunStatus\"6\n\x10\x43\x61ncelRunRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x0e\n\x06run_id\x18\x02 \x01(\t\"\x13\n\x11\x43\x61ncelRunResponse\"9\n\x13SubscribeRunRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x0e\n\x06run_id\x18\x02 \x01(\t\"A\n\x08RunEvent\x12$\n\x06status\x18\x01 \x01(\x0b\x32\x14.common.v1.RunStatus\x12\x0f\n\x07message\x18\x02 \x01(\t2\xf3\x01\n\x0eRuntimeExecute\x12N\n\x0bRunTemplate\x12\x1e.runtime.v1.RunTemplateRequest\x1a\x1f.runtime.v1.RunTemplateResponse\x12H\n\tCancelRun\x12\x1c.runtime.v1.CancelRunRequest\x1a\x1d.runtime.v1.CancelRunResponse\x12G\n\x0cSubscribeRun\x12\x1f.runtime.v1.SubscribeRunRequest\x1a\x14.runtime.v1.RunEvent0\x01\x42\x31Z/piper_agent/runtime/pkg/pb/runtime/v1;runtimev1b\x06proto3')

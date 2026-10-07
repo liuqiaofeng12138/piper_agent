@@ -44,6 +44,12 @@ def main() -> None:
     ask_p.add_argument("--config", default=default_cfg)
     ask_p.add_argument("--runtime", default=None)
 
+    worker_p = sub.add_parser("worker", help="Start a gRPC agent worker (Phase W2+)")
+    worker_sub = worker_p.add_subparsers(dest="worker_name", required=True)
+    wc_p = worker_sub.add_parser("web-crawler", help="Web collection / crawler agent")
+    wc_p.add_argument("--config", default=default_cfg, help="deploy/config/local.yaml")
+    wc_p.add_argument("--listen", default=None, help="override agents.web_crawler.listen")
+
     args = parser.parse_args()
 
     if args.command == "doctor":
@@ -84,6 +90,14 @@ def main() -> None:
             print(loop.run_turn(args.prompt))
         finally:
             client.close()
+    elif args.command == "worker":
+        if args.worker_name == "web-crawler":
+            from piper_agent.workers.web_crawler import main as worker_main
+
+            cfg = args.config if Path(args.config).is_file() else None
+            worker_main(cfg, args.listen)
+        else:
+            raise SystemExit(f"unknown worker: {args.worker_name}")
 
 
 if __name__ == "__main__":

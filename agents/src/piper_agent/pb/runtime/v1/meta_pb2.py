@@ -22,7 +22,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from piper_agent.pb.common.v1 import types_pb2 as common_dot_v1_dot_types__pb2
+from common.v1 import types_pb2 as common_dot_v1_dot_types__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15runtime/v1/meta.proto\x12\nruntime.v1\x1a\x15\x63ommon/v1/types.proto\"U\n\x14ListTemplatesRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x0c\n\x04page\x18\x02 \x01(\x05\x12\x0c\n\x04size\x18\x03 \x01(\x05\x12\r\n\x05query\x18\x04 \x01(\t\"Q\n\x15ListTemplatesResponse\x12)\n\ttemplates\x18\x01 \x03(\x0b\x32\x16.common.v1.TemplateDoc\x12\r\n\x05total\x18\x02 \x01(\x03\"=\n\x12GetTemplateRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\"?\n\x13GetTemplateResponse\x12(\n\x08template\x18\x01 \x01(\x0b\x32\x16.common.v1.TemplateDoc\"D\n\x08ProxyDoc\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06\x64omain\x18\x03 \x01(\t\x12\x0e\n\x06status\x18\x04 \x01(\t\"T\n\x12ListProxiesRequest\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x0c\n\x04page\x18\x02 \x01(\x05\x12\x0c\n\x04size\x18\x03 \x01(\x05\x12\x0e\n\x06status\x18\x04 \x01(\t\"K\n\x13ListProxiesResponse\x12%\n\x07proxies\x18\x01 \x03(\x0b\x32\x14.runtime.v1.ProxyDoc\x12\r\n\x05total\x18\x02 \x01(\x03\x32\x83\x02\n\x0bRuntimeMeta\x12T\n\rListTemplates\x12 .runtime.v1.ListTemplatesRequest\x1a!.runtime.v1.ListTemplatesResponse\x12N\n\x0bGetTemplate\x12\x1e.runtime.v1.GetTemplateRequest\x1a\x1f.runtime.v1.GetTemplateResponse\x12N\n\x0bListProxies\x12\x1e.runtime.v1.ListProxiesRequest\x1a\x1f.runtime.v1.ListProxiesResponseB1Z/piper_agent/runtime/pkg/pb/runtime/v1;runtimev1b\x06proto3')

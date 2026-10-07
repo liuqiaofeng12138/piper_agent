@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $ProtoRoot = Join-Path $Root "proto"
 $RuntimeOut = Join-Path $Root "runtime"
+$GatewayOut = Join-Path $Root "gateway"
 $AgentsPB = Join-Path $Root "agents\src\piper_agent\pb"
 
 New-Item -ItemType Directory -Force -Path (Join-Path $RuntimeOut "pkg\pb") | Out-Null
@@ -31,6 +32,22 @@ python -m grpc_tools.protoc `
   --grpc_python_out=$AgentsPB `
   $protoFiles
 
+$agentProtos = @("agent/v1/execute.proto")
+$agentFiles = $agentProtos | ForEach-Object { Join-Path $ProtoRoot $_ }
+
+protoc `
+  -I $ProtoRoot `
+  --go_out=$GatewayOut --go_opt=module=piper_agent/gateway `
+  --go-grpc_out=$GatewayOut --go-grpc_opt=module=piper_agent/gateway `
+  $agentFiles
+
+python -m grpc_tools.protoc `
+  -I $ProtoRoot `
+  --python_out=$AgentsPB `
+  --grpc_python_out=$AgentsPB `
+  $agentFiles
+
 Write-Host "Go stubs -> $RuntimeOut\pkg\pb"
+Write-Host "Go agent stubs -> $GatewayOut\pkg\pb"
 Write-Host "Python stubs -> $AgentsPB"
 Write-Host "Note: fix Python imports to piper_agent.pb.* in *_pb2*.py if regenerated"

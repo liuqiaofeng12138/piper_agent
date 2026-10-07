@@ -46,6 +46,23 @@ engine:
 runtime:
   address: "127.0.0.1:50051"
 
+gateway:
+  listen: ":8080"
+  chat_timeout_seconds: 600
+  auth:
+    mode: none
+    token: ""
+  session:
+    driver: sqlite
+    sqlite_path: "../../data/gateway.db"
+  classifier:
+    mode: rule
+
+agents:
+  web_crawler:
+    listen: "127.0.0.1:50061"
+    enabled: true
+
 llm:
   provider: openai
   model: gpt-4o
