@@ -81,15 +81,24 @@ def _apply_raw(cfg: AgentConfig, raw: dict[str, Any]) -> None:
     )
 
 
-def worker_listen_address(path: str | Path | None = None) -> str:
+def worker_listen_address(path: str | Path | None = None, agent_id: str = "web_crawler") -> str:
+    """读取指定子 Agent 的 gRPC 监听地址（兼容 agents 的列表与 map 两种配置格式）。"""
+    fallback = "127.0.0.1:15061" if agent_id == "web_crawler" else "127.0.0.1:15062"
     config_file = Path(path) if path else default_config_path()
     if not config_file.is_file():
-        return "127.0.0.1:15061"
+        return fallback
     raw: dict[str, Any] = yaml.safe_load(config_file.read_text(encoding="utf-8")) or {}
     agents = raw.get("agents") or {}
-    wc = agents.get("web_crawler") or {}
-    listen = wc.get("listen") or wc.get("address")
-    return str(listen or "127.0.0.1:15061")
+    entry: dict[str, Any] = {}
+    if isinstance(agents, list):
+        for item in agents:
+            if isinstance(item, dict) and item.get("id") == agent_id:
+                entry = item
+                break
+    elif isinstance(agents, dict):
+        entry = agents.get(agent_id) or {}
+    listen = entry.get("listen") or entry.get("address")
+    return str(listen or fallback)
 
 
 def _find_repo_root() -> Path | None:

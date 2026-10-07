@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useChatStore } from '@/stores/chat'
 import type { Message } from '@/api/types'
 import { renderMarkdown } from '@/utils/markdown'
 
@@ -6,6 +8,13 @@ defineProps<{
   messages: Message[]
   loading?: boolean
 }>()
+
+const store = useChatStore()
+const agentNames = computed(() => {
+  const map: Record<string, string> = {}
+  for (const a of store.agents) map[a.id] = a.display_name
+  return map
+})
 </script>
 
 <template>
@@ -28,6 +37,9 @@ defineProps<{
             class="bubble assistant"
             :class="{ streaming: msg.streaming }"
           >
+            <div v-if="msg.agent_id" class="agent-tag">
+              {{ agentNames[msg.agent_id] || msg.agent_id }}
+            </div>
             <div v-if="msg.steps?.length" class="steps">
               <div class="steps-title">执行步骤</div>
               <details
@@ -119,6 +131,16 @@ defineProps<{
   color: var(--ds-text);
   word-break: break-word;
   min-width: 0;
+}
+.agent-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8eeff;
+  color: var(--ds-primary);
+  font-weight: 500;
+  margin-bottom: 6px;
 }
 .steps {
   margin-bottom: 12px;

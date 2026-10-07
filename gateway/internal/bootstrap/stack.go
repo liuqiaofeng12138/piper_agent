@@ -33,10 +33,6 @@ func RunAll(configPath string, gatewayListen string) error {
 		return fmt.Errorf("gateway config: %w", err)
 	}
 	runtimeListen := yamlListen(absConfig, "listen", ":50051")
-	workerListen := gwCfg.Agents.WebCrawler.Address
-	if workerListen == "" {
-		workerListen = "127.0.0.1:15061"
-	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -54,16 +50,30 @@ func RunAll(configPath string, gatewayListen string) error {
 	}
 	log.Printf("piper-runtime ready at %s", runtimeListen)
 
-	workerCmd, err := startWorker(ctx, absConfig, repoRoot, workerListen)
-	if err != nil {
-		return err
+	var workerCmds []*exec.Cmd
+	terminateWorkers := func() {
+		for _, c := range workerCmds {
+			terminateProcess(c)
+		}
 	}
-	defer terminateProcess(workerCmd)
-	log.Printf("web-crawler worker starting at %s", workerListen)
-	if err := waitTCP(workerListen, 90*time.Second); err != nil {
-		return fmt.Errorf("worker not ready: %w", err)
+	defer terminateWorkers()
+
+	for _, agent := range gwCfg.EnabledAgents() {
+		if agent.Address == "" {
+			log.Printf("agent %s enabled 但未配置 address，跳过启动", agent.ID)
+			continue
+		}
+		workerCmd, err := startWorker(ctx, absConfig, repoRoot, agent)
+		if err != nil {
+			return fmt.Errorf("start worker %s: %w", agent.ID, err)
+		}
+		workerCmds = append(workerCmds, workerCmd)
+		log.Printf("worker %s starting at %s", agent.ID, agent.Address)
+		if err := waitTCP(agent.Address, 90*time.Second); err != nil {
+			return fmt.Errorf("worker %s not ready: %w", agent.ID, err)
+		}
+		log.Printf("worker %s ready at %s", agent.ID, agent.Address)
 	}
-	log.Printf("web-crawler worker ready at %s", workerListen)
 
 	gwErr := make(chan error, 1)
 	go func() {
@@ -73,11 +83,11 @@ func RunAll(configPath string, gatewayListen string) error {
 	select {
 	case <-ctx.Done():
 		log.Printf("shutting down...")
-		terminateProcess(workerCmd)
+		terminateWorkers()
 		terminateProcess(rtCmd)
 		return nil
 	case err := <-gwErr:
-		terminateProcess(workerCmd)
+		terminateWorkers()
 		terminateProcess(rtCmd)
 		return fmt.Errorf("gateway exited: %w", err)
 	}
@@ -122,9 +132,9 @@ func startRuntime(ctx context.Context, configPath string, repoRoot string) (*exe
 	return cmd, nil
 }
 
-func startWorker(ctx context.Context, configPath string, repoRoot string, listenAddr string) (*exec.Cmd, error) {
+func startWorker(ctx context.Context, configPath string, repoRoot string, agent config.AgentSpec) (*exec.Cmd, error) {
 	agentsDir := filepath.Join(repoRoot, "agents")
-	name, args, env := workerCommand(configPath, agentsDir, listenAddr)
+	name, args, env := workerCommand(configPath, agentsDir, agent)
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Env = append(os.Environ(), env...)
 	cmd.Dir = agentsDir
@@ -136,15 +146,15 @@ func startWorker(ctx context.Context, configPath string, repoRoot string, listen
 	return cmd, nil
 }
 
-// workerCommand 启动 gRPC Worker（python -m piper_agent.workers.web_crawler），不经 piper-agent CLI。
-func workerCommand(configPath string, agentsDir string, listenAddr string) (string, []string, []string) {
+// workerCommand 启动 gRPC Worker（python -m <agent.Module>），不经 piper-agent CLI。
+func workerCommand(configPath string, agentsDir string, agent config.AgentSpec) (string, []string, []string) {
 	extraEnv := []string{
 		fmt.Sprintf("PYTHONPATH=%s", filepath.Join(agentsDir, "src")),
 	}
 	moduleArgs := []string{
-		"-m", "piper_agent.workers.web_crawler",
+		"-m", agent.WorkerModule(),
 		"--config", configPath,
-		"--listen", listenAddr,
+		"--listen", agent.Address,
 	}
 
 	if override := os.Getenv("PIPER_WORKER_PYTHON"); override != "" {

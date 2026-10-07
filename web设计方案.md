@@ -98,30 +98,35 @@ Python **GIL** 问题：网关不跑 LLM 主循环；每个子 Agent 以 **多�
 
 ### 3.1 子 Agent 注册模型（网关侧）
 
-建议在 `gateway` 维护静态 + 配置化注册表（`deploy/config/local.yaml` 扩展段）：
+在 `gateway` 维护配置化注册表（`deploy/config/local.yaml` 的 `agents` 列表，Phase W4 落地）：
 
 ```yaml
 agents:
   - id: web_crawler
     display_name: "网页采集"
-    description: "自然语言描述采集任务，生成 Piper 模版并执行抓取"
-    endpoint: "127.0.0.1:15061"   # Python web_crawler worker gRPC（避开 Windows 保留端口段）
+    description: "自然语言描述网页抓取/数据采集任务，生成 Piper 模版并调用 Runtime 执行"
+    listen: "127.0.0.1:15061"   # Python worker gRPC（避开 Windows 保留端口段）
     enabled: true
-    intents: ["web_scrape", "crawl", "piper_collect", "default"]  # default 表示兜底
+  - id: general_chat
+    display_name: "通用对话"
+    description: "日常问答、知识咨询、闲聊等非采集类对话"
+    listen: "127.0.0.1:15062"
+    enabled: true
+    default: true               # 意图未命中时的兜底 Agent
   # 预留
   - id: doc_rag
     enabled: false
-    endpoint: "127.0.0.1:50062"
+    listen: "127.0.0.1:15063"
 ```
 
-**首期**：仅 `web_crawler` 为 `enabled: true`；其余条目用于文档与后续接入。
+**W2**：仅 `web_crawler`；**W4**：新增 `general_chat` 兜底，`piper-serve` 为每个 enabled Agent 拉起对应 Python Worker（模块默认 `piper_agent.workers.<id>`，可用 `module` 覆盖）。
 
 ### 3.2 意图识别策略（分阶段）
 
 | 阶段 | 方式 | 延迟目标 | 说明 |
 |------|------|----------|------|
-| **MVP** | 规则 + 关键词 + 默认路由 | &lt; 50ms | 含「抓取、采集、爬、模板、URL、index」等 → `web_crawler`；无法判断 → `web_crawler`（当前唯一可用 Agent） |
-| **V2** | 小模型结构化输出 | &lt; 200ms | Go 调用 OpenAI-compatible `chat/completions`，`response_format: json`，输出 `{ "agent_id", "confidence", "reason" }` |
+| **MVP（W2）** | 规则 + 关键词 + 默认路由 | &lt; 50ms | 含「抓取、采集、爬、模板、URL、index」等 → `web_crawler`；无法判断 → `default` Agent |
+| **V2（W4 已落地）** | 小模型结构化输出 | &lt; 4s（超时回退 rule） | 网关调用 OpenAI-compatible `chat/completions`，`response_format: json_object`，输出 `{ "agent_id", "confidence", "reason" }`；`classifier.mode: llm` 启用，复用 `llm` 段密钥 |
 | **V3** | 独立分类服务 | 可缓存 | 高频意图本地 BERT / 1B 模型；与业务 LLM 分离 |
 
 路由结果写入审计日志：`trace_id`, `conversation_id`, `chosen_agent_id`, `classifier_version`。
@@ -287,11 +292,21 @@ gateway:
   session:
     driver: memory      # memory | redis | postgres
   classifier:
-    mode: rule          # rule | llm
+    mode: rule          # rule | llm（llm 模式复用 llm 段，失败自动回退 rule）
+    timeout_ms: 4000
 
 agents:
-  web_crawler:
+  - id: web_crawler
+    display_name: "网页采集"
+    description: "自然语言描述网页抓取/数据采集任务"
     listen: "127.0.0.1:15061"
+    enabled: true
+  - id: general_chat
+    display_name: "通用对话"
+    description: "日常问答、知识咨询、闲聊"
+    listen: "127.0.0.1:15062"
+    enabled: true
+    default: true
 ```
 
 ### 7.2 推荐启动顺序（开发）
@@ -361,9 +376,9 @@ agents:
 
 ### Phase W4 — 多 Agent 扩展（持续）
 
-- [ ] 分类器升级为 LLM JSON 路由
-- [ ] 新子 Agent：独立 Python worker + 注册表一项 + 前端可选展示
-- [ ] 鉴权对接企业 SSO（可选）
+- [x] 分类器升级为 LLM JSON 路由（`classifier.mode: llm`，复用 `llm` 段配置，超时/非法结果自动回退 rule）
+- [x] 新子 Agent：`general_chat`（无工具通用对话 Worker）+ 配置化注册表（`agents` 列表，含 `default` 兜底）+ 前端消息级 Agent 徽章与顶栏全量状态
+- [ ] 鉴权对接企业 SSO（可选，本期暂不开发）
 
 ---
 

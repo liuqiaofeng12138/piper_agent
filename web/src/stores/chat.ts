@@ -109,6 +109,7 @@ export const useChatStore = defineStore('chat', () => {
             activeConversationId.value = ev.conversation_id
           }
           if (ev.run_id) currentRunId.value = ev.run_id
+          if (ev.agent_id) assistantMsg.agent_id = ev.agent_id
           if (ev.type === 'message.delta' && ev.delta) {
             assistantMsg.content += ev.delta
           }

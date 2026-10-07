@@ -13,6 +13,7 @@ export interface Message {
   created_at: string
   streaming?: boolean
   steps?: MessageStep[]
+  agent_id?: string
 }
 
 export interface Conversation {

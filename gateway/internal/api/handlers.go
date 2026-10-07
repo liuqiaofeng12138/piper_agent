@@ -25,11 +25,11 @@ import (
 )
 
 type Deps struct {
-	Store  session.Store
-	Config *config.Config
-	Router *router.Engine
-	Worker *agentclient.WorkerClient
-	Runs   *run.Registry
+	Store   session.Store
+	Config  *config.Config
+	Router  *router.Engine
+	Workers *agentclient.Pool
+	Runs    *run.Registry
 }
 
 type Server struct {
@@ -61,14 +61,18 @@ func (s *Server) Register(mux *http.ServeMux) {
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
-	workerOK := false
-	workerErr := ""
-	if s.deps.Config.Agents.WebCrawler.Enabled {
-		if err := s.deps.Worker.Health(r.Context()); err != nil {
+	checks := map[string]any{}
+	overall := "ok"
+	for _, a := range s.deps.Config.EnabledAgents() {
+		workerErr := ""
+		workerOK := false
+		if err := s.deps.Workers.Health(r.Context(), a.ID); err != nil {
 			workerErr = err.Error()
+			overall = "degraded"
 		} else {
 			workerOK = true
 		}
+		checks[a.ID+"_worker"] = map[string]any{"ok": workerOK, "address": a.Address, "error": workerErr}
 	}
 	runtimeOK := false
 	if s.deps.Config.RuntimeAddress != "" {
@@ -76,18 +80,12 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 			runtimeOK = true
 		}
 	}
-	overall := "ok"
-	if s.deps.Config.Agents.WebCrawler.Enabled && !workerOK {
-		overall = "degraded"
-	}
+	checks["runtime_grpc"] = map[string]any{"ok": runtimeOK, "address": s.deps.Config.RuntimeAddress}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"status":  overall,
 		"service": "piper-gateway",
-		"phase":   "W3",
-		"checks": map[string]any{
-			"web_crawler_worker": map[string]any{"ok": workerOK, "address": s.deps.Config.Agents.WebCrawler.Address, "error": workerErr},
-			"runtime_grpc":       map[string]any{"ok": runtimeOK, "address": s.deps.Config.RuntimeAddress},
-		},
+		"phase":   "W4",
+		"checks":  checks,
 	})
 }
 
@@ -100,22 +98,22 @@ func tcpReachable(addr string, timeout time.Duration) error {
 }
 
 func (s *Server) listAgents(w http.ResponseWriter, r *http.Request) {
-	healthy := false
-	if s.deps.Config.Agents.WebCrawler.Enabled {
-		healthy = s.deps.Worker.Health(r.Context()) == nil
+	agents := make([]agentInfo, 0, len(s.deps.Config.Agents))
+	for _, a := range s.deps.Config.Agents {
+		healthy := false
+		if a.Enabled {
+			healthy = s.deps.Workers.Health(r.Context(), a.ID) == nil
+		}
+		agents = append(agents, agentInfo{
+			ID:          a.ID,
+			DisplayName: a.DisplayName,
+			Description: a.Description,
+			Enabled:     a.Enabled,
+			Healthy:     healthy,
+			Address:     a.Address,
+		})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"agents": []agentInfo{
-			{
-				ID:          router.AgentWebCrawler,
-				DisplayName: "网页采集",
-				Description: "自然语言描述采集任务，调用 Piper Runtime 执行抓取",
-				Enabled:     s.deps.Config.Agents.WebCrawler.Enabled,
-				Healthy:     healthy,
-				Address:     s.deps.Config.Agents.WebCrawler.Address,
-			},
-		},
-	})
+	writeJSON(w, http.StatusOK, map[string]any{"agents": agents})
 }
 
 func (s *Server) createConversation(w http.ResponseWriter, r *http.Request) {
@@ -186,12 +184,13 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 
 	runID := "r_" + uuid.NewString()
 	traceID := traceIDFromContext(r.Context())
-	agentID := s.deps.Router.Classify(req.Message)
+	agentID, routeReason := s.deps.Router.Classify(r.Context(), req.Message)
 
-	log.Printf("[chat] start trace=%s conv=%s run=%s agent=%s msg_len=%d",
-		traceID, convID, runID, agentID, len(req.Message))
+	log.Printf("[chat] start trace=%s conv=%s run=%s agent=%s route=%q msg_len=%d",
+		traceID, convID, runID, agentID, routeReason, len(req.Message))
 
-	if agentID != router.AgentWebCrawler || !s.deps.Config.Agents.WebCrawler.Enabled {
+	worker := s.deps.Workers.Get(agentID)
+	if agentID == "" || worker == nil {
 		http.Error(w, "no agent available for this request", http.StatusServiceUnavailable)
 		return
 	}
@@ -201,7 +200,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	workerCancel := func() {
-		_ = s.deps.Worker.CancelRun(context.Background(), runID)
+		_ = worker.CancelRun(context.Background(), runID)
 	}
 	s.deps.Runs.Register(runID, cancel, workerCancel)
 	defer s.deps.Runs.Unregister(runID)
@@ -215,7 +214,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !req.Stream {
-		final, err := s.collectExecute(ctx, grpcReq, nil)
+		final, err := s.collectExecute(ctx, worker, grpcReq, nil)
 		if err != nil {
 			log.Printf("[chat] error trace=%s run=%s err=%v", traceID, runID, err)
 			http.Error(w, err.Error(), http.StatusBadGateway)
@@ -254,7 +253,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		flusher.Flush()
 	}
 
-	err := s.deps.Worker.Execute(ctx, grpcReq, func(ev *agentv1.ExecuteEvent) error {
+	err := worker.Execute(ctx, grpcReq, func(ev *agentv1.ExecuteEvent) error {
 		if r.Context().Err() != nil {
 			return r.Context().Err()
 		}
@@ -311,11 +310,12 @@ func truncateLog(s string, n int) string {
 
 func (s *Server) collectExecute(
 	ctx context.Context,
+	worker *agentclient.WorkerClient,
 	req *agentv1.ExecuteRequest,
 	onEvent func(*agentv1.ExecuteEvent),
 ) (string, error) {
 	var final strings.Builder
-	err := s.deps.Worker.Execute(ctx, req, func(ev *agentv1.ExecuteEvent) error {
+	err := worker.Execute(ctx, req, func(ev *agentv1.ExecuteEvent) error {
 		if onEvent != nil {
 			onEvent(ev)
 		}

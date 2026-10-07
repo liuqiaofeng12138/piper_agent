@@ -28,7 +28,8 @@ services:
     ports:
       - "8080:8080"
       - "50051:50051"
-      - "15061:15061"
+      - "15061:15061"   # web_crawler worker
+      - "15062:15062"   # general_chat worker
     command: >
       sh -c "cd /app/gateway && go run ./cmd/piper-serve -f /app/deploy/config/local.yaml"
     environment:

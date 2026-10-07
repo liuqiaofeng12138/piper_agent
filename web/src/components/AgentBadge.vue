@@ -1,34 +1,48 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useChatStore } from '@/stores/chat'
+import type { AgentInfo } from '@/api/types'
 
 const store = useChatStore()
 
-const primary = computed(() => store.agents.find((a) => a.enabled) ?? store.agents[0])
+const agents = computed(() => store.agents)
 
-const statusText = computed(() => {
-  if (!primary.value) return '未配置'
-  if (!primary.value.enabled) return '未启用'
-  if (primary.value.healthy === false) return '离线'
+function statusText(a: AgentInfo): string {
+  if (!a.enabled) return '未启用'
+  if (a.healthy === false) return '离线'
   return '在线'
-})
+}
 
-const statusClass = computed(() => {
-  if (!primary.value?.enabled) return 'off'
-  if (primary.value.healthy === false) return 'bad'
+function statusClass(a: AgentInfo): string {
+  if (!a.enabled) return 'off'
+  if (a.healthy === false) return 'bad'
   return 'ok'
-})
+}
 </script>
 
 <template>
-  <div v-if="primary" class="agent-badge" :class="statusClass">
-    <span class="dot" />
-    <span class="name">{{ primary.display_name }}</span>
-    <span class="status">{{ statusText }}</span>
+  <div class="agent-badges">
+    <div
+      v-for="a in agents"
+      :key="a.id"
+      class="agent-badge"
+      :class="statusClass(a)"
+      :title="a.description"
+    >
+      <span class="dot" />
+      <span class="name">{{ a.display_name }}</span>
+      <span class="status">{{ statusText(a) }}</span>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.agent-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .agent-badge {
   display: inline-flex;
   align-items: center;

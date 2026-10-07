@@ -33,17 +33,18 @@ func StartHTTP(cfg *config.Config, listenOverride string) error {
 		log.Printf("session store: sqlite %s", dbPath)
 	}
 
-	worker := agentclient.New(cfg.Agents.WebCrawler.Address)
+	pool := agentclient.NewPool(cfg.Agents)
+	defer pool.Close()
 	deps := &api.Deps{
-		Store:  store,
-		Config: cfg,
-		Router: router.New(cfg.Classifier.Mode),
-		Worker: worker,
-		Runs:   run.NewRegistry(),
+		Store:   store,
+		Config:  cfg,
+		Router:  router.New(cfg),
+		Workers: pool,
+		Runs:    run.NewRegistry(),
 	}
 	handler := api.NewHandler(deps, bearerToken(cfg))
 
-	log.Printf("piper-gateway listening on %s (worker=%s)", addr, cfg.Agents.WebCrawler.Address)
+	log.Printf("piper-gateway listening on %s (agents=%d, classifier=%s)", addr, len(cfg.EnabledAgents()), cfg.Classifier.Mode)
 	return http.ListenAndServe(addr, handler)
 }
 

@@ -58,12 +58,23 @@ gateway:
     driver: sqlite
     sqlite_path: "../../data/gateway.db"
   classifier:
-    mode: rule
+    mode: rule          # rule | llm（llm 模式复用下方 llm 段，失败自动回退 rule）
+    # model: ""         # 默认复用 llm.model，可指定更小的分类模型
+    timeout_ms: 4000
 
+# 子 Agent 注册表（列表格式；也兼容旧的 map 格式 agents.web_crawler.listen）
 agents:
-  web_crawler:
+  - id: web_crawler
+    display_name: "网页采集"
+    description: "自然语言描述网页抓取/数据采集任务，生成 Piper 模版并调用 Runtime 执行"
     listen: "127.0.0.1:15061"
     enabled: true
+  - id: general_chat
+    display_name: "通用对话"
+    description: "日常问答、知识咨询、闲聊等非采集类对话"
+    listen: "127.0.0.1:15062"
+    enabled: true
+    default: true       # 意图未命中时的兜底 Agent
 
 llm:
   provider: openai
