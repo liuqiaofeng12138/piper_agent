@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: piper-agent
+Version: 0.1.0
+Summary: 平台通用子 Agent Workers（general_chat 等非采集类 Agent）
+Requires-Python: >=3.11
+Requires-Dist: grpcio>=1.60
+Requires-Dist: protobuf>=4.25
+Requires-Dist: pyyaml>=6.0
+Provides-Extra: llm
+Requires-Dist: openai>=1.12; extra == "llm"
