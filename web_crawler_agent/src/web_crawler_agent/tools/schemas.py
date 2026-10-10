@@ -4,6 +4,35 @@ TOOL_SCHEMAS: list[dict] = [
     {
         "type": "function",
         "function": {
+            "name": "site_probe",
+            "description": (
+                "Probe a target URL over HTTP(S) before writing templates: final URL, "
+                "content type, JSON keys/JSONPath hints or HTML title/SPA signals. "
+                "Call this first for new sites, then combine with search_similar_templates."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "Page or API URL to fetch (http/https)",
+                    },
+                    "max_body_bytes": {
+                        "type": "integer",
+                        "description": "Max response bytes to read (default from harness config)",
+                    },
+                    "timeout_seconds": {
+                        "type": "number",
+                        "description": "HTTP timeout in seconds",
+                    },
+                },
+                "required": ["url"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "search_similar_templates",
             "description": "RAG search over meta templates and shared/examples/templates/*.json",
             "parameters": {

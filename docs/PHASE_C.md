@@ -8,6 +8,8 @@
 | 工具 `param_filler_suggest` | 同上 |
 | 工具 `runner_*` | 同上 |
 | RAG | `web_crawler_agent/src/web_crawler_agent/rag/template_index.py` + `shared/examples/templates/` |
+| 探站 `site_probe` | `web_crawler_agent/src/web_crawler_agent/probe/site_probe.py`（新站写模版前 HTTP 探针） |
+| 模版自动归档 | `template_author_validate` 成功后写入 Runtime meta + `data/saved_templates/*.json` |
 | Harness 循环 | `web_crawler_agent/src/web_crawler_agent/harness/loop.py`, `registry.py`, `session.py`, `policies.py` |
 | Orchestrator | `web_crawler_agent/src/web_crawler_agent/agents/orchestrator.py` |
 | 强校验 diagnostics | `engine/pkg/agentruntime/validate.go` |

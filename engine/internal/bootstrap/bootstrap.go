@@ -65,7 +65,8 @@ func Run(ctx context.Context, s *svc.ServiceContext) error {
 	chromeDist.SetPersister(s.Persist)
 	if s.Config.Chrome.Enabled {
 		chromeDist.StartAgents(node.InstID, s.Config.Chrome.AgentCount)
-		logx.Infof("chrome agents started: %d", chromeDist.AgentCount())
+		logx.Infof("chrome agents started: %d headless=%v manual_login_wait_seconds=%d user_data_dir=%q",
+			chromeDist.AgentCount(), s.Config.Chrome.Headless, s.Config.Chrome.ManualLoginWaitSeconds, s.Config.Chrome.UserDataDir)
 	}
 	node.Ready = true
 	s.SetNode(node)

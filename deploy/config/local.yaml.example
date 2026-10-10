@@ -42,6 +42,10 @@ engine:
     enabled: true
     headless: false
     agentCount: 1
+    # 持久化登录态（相对 deploy/config）；微博等需登录站点建议配置
+    userDataDir: "../../data/chrome_piper"
+    # 非 headless 时每次 Chrome 任务结束后多保留窗口的秒数（0=立即关闭）
+    manualLoginWaitSeconds: 0
 
 runtime:
   address: "127.0.0.1:50051"
@@ -117,3 +121,7 @@ harness:
   require_validate_before_run: true
   max_runs_per_session: 10
   audit_log: "../../logs/agent_audit.jsonl"
+  site_probe_max_bytes: 65536
+  site_probe_timeout_seconds: 25
+  auto_save_templates: true
+  saved_templates_dir: "../../data/saved_templates"

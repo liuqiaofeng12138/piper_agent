@@ -19,6 +19,10 @@ type ChromeConf struct {
 	Headless   bool   `json:"headless,default=true"`
 	BinaryPath string `json:"binaryPath,optional"`
 	AgentCount int    `json:"agentCount,default=1"`
+	// UserDataDir 持久化 Chrome 配置（Cookie/登录态）；相对路径相对于配置文件所在目录。
+	UserDataDir string `json:"userDataDir,optional"`
+	// ManualLoginWaitSeconds 非 headless 且检测到登录墙时，抓取前留给人工登录的秒数。
+	ManualLoginWaitSeconds int `json:"manualLoginWaitSeconds,optional,default=0"`
 }
 
 type H2Conf struct {

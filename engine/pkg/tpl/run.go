@@ -91,8 +91,17 @@ func execProc(ctx *RunContext, proc map[string]any, agent ExecAgent, token map[s
 		if script := strVal(proc, "script"); script != "" {
 			_, execErr = agent.ChromeEvalJS(script)
 		}
-	case "LoginAction", "LoginManuallyCheckAction":
-		// Account/login flows depend on account DB — handled at chrome token wrapper layer
+	case "LoginManuallyCheckAction":
+		ms := toInt64(proc["waitTime"], 0)
+		if ms == 0 {
+			ms = toInt64(proc["idleTime"], 0)
+		}
+		if ms <= 0 {
+			ms = 120_000
+		}
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+	case "LoginAction":
+		// 账号密码登录依赖 account DB，尚未接入 Go Chrome 路径。
 	default:
 		if strings.Contains(typ, "Chrome") || strings.HasPrefix(typ, "Scroll") {
 			// unknown chrome action — no-op on HTTP

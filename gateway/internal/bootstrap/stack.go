@@ -112,7 +112,9 @@ func startRuntime(ctx context.Context, configPath string, repoRoot string) (*exe
 		exeName = "piper-runtime"
 	}
 	built := filepath.Join(runtimeDir, exeName)
-	if fileExists(built) {
+	useBuilt := os.Getenv("PIPER_RUNTIME_USE_BUILT") == "1" || strings.EqualFold(os.Getenv("PIPER_RUNTIME_USE_BUILT"), "true")
+	if useBuilt && fileExists(built) {
+		log.Printf("piper-runtime: using built binary %s (set PIPER_RUNTIME_USE_BUILT=0 to use go run)", built)
 		cmd := exec.CommandContext(ctx, built, "-f", configPath)
 		cmd.Dir = runtimeDir
 		cmd.Stdout = os.Stdout
@@ -123,6 +125,7 @@ func startRuntime(ctx context.Context, configPath string, repoRoot string) (*exe
 		return cmd, nil
 	}
 
+	log.Printf("piper-runtime: go run ./cmd/piper-runtime (rebuild on start; PIPER_RUNTIME_USE_BUILT=1 to use %s)", exeName)
 	cmd := exec.CommandContext(ctx, "go", "run", "./cmd/piper-runtime", "-f", configPath)
 	cmd.Dir = runtimeDir
 	cmd.Stdout = os.Stdout

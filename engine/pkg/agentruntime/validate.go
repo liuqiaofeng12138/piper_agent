@@ -92,14 +92,31 @@ func validateProcedure(proc map[string]any, index int) []Diagnostic {
 	switch ptype {
 	case "Mapper":
 		return validateMapper(proc, prefix)
+	case "Interceptor":
+		return validateInterceptor(proc, prefix)
 	case "If", "For", "LoadUrlAction", "IdleAction", "FuncCallAction",
-		"ScrollAction", "ClickAction", "SetValueAction", "RedirectAction", "ExecAction":
+		"ScrollAction", "ClickAction", "SetValueAction", "RedirectAction", "ExecAction",
+		"LoginManuallyCheckAction", "LoginAction", "ScreenshotAction":
 		return nil
 	default:
 		return []Diagnostic{{
 			Code: "UNKNOWN_PROC_TYPE", Message: fmt.Sprintf("procedure type %q not recognized in validator", ptype), Path: prefix + "._type",
 		}}
 	}
+}
+
+func validateInterceptor(proc map[string]any, prefix string) []Diagnostic {
+	regex, _ := proc["regex"].(string)
+	if strings.TrimSpace(regex) == "" {
+		return []Diagnostic{{
+			Code: "MISSING_INTERCEPTOR_REGEX", Message: "Interceptor requires regex", Path: prefix + ".regex",
+		}}
+	}
+	mapper, _ := proc["mapper"].(map[string]any)
+	if mapper == nil {
+		return nil
+	}
+	return validateMapper(mapper, prefix+".mapper")
 }
 
 func validateMapper(proc map[string]any, prefix string) []Diagnostic {

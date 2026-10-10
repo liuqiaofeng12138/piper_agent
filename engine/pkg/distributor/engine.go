@@ -129,6 +129,7 @@ func (e *Engine) execute(token map[string]any) {
 	success := false
 	defer func() {
 		token["success"] = success
+		token["finished"] = true
 		token["update_time"] = time.Now().UnixMilli()
 		RecordTokenStats(token, success)
 		if e.es != nil && id != "" {

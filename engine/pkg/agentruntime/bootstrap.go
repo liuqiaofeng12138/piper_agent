@@ -29,6 +29,12 @@ func bootstrapWithConfig(ctx context.Context, c config.Config, configBaseDir str
 	if c.H2.Path != "" && !filepath.IsAbs(c.H2.Path) {
 		c.H2.Path = filepath.Join(configBaseDir, c.H2.Path)
 	}
+	if c.Chrome.UserDataDir != "" && !filepath.IsAbs(c.Chrome.UserDataDir) {
+		c.Chrome.UserDataDir = filepath.Join(configBaseDir, c.Chrome.UserDataDir)
+	}
+	if c.Chrome.Enabled && !c.Chrome.Headless && c.Chrome.ManualLoginWaitSeconds < 0 {
+		c.Chrome.ManualLoginWaitSeconds = 120
+	}
 	if opt.RelaxDeps {
 		c.WebAPI.RequireDeps = false
 	}

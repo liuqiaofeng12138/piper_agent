@@ -13,7 +13,9 @@ from web_crawler_agent.harness.policies import (
 )
 from web_crawler_agent.pb.common.v1 import types_pb2
 from web_crawler_agent.harness.session import SessionState
+from web_crawler_agent.probe.site_probe import probe_url
 from web_crawler_agent.rag.template_index import TemplateIndex
+from web_crawler_agent.templates.store import persist_validated_template
 
 
 class ToolHandlers:
@@ -41,6 +43,7 @@ class ToolHandlers:
             "runner_wait_for_complete": self.runner_wait_for_complete,
             "runner_get_data": self.runner_get_data,
             "load_shared_example_template": self.load_shared_example_template,
+            "site_probe": self.site_probe,
         }
         fn = handlers.get(name)
         if fn is None:
@@ -51,6 +54,15 @@ class ToolHandlers:
             return json.dumps({"error": str(e), "code": "POLICY"})
         except Exception as e:  # noqa: BLE001 — tool surface for LLM
             return json.dumps({"error": str(e), "code": "INTERNAL"})
+
+    def site_probe(self, args: dict[str, Any]) -> str:
+        url = str(args.get("url") or args.get("target") or "").strip()
+        if not url:
+            return json.dumps({"ok": False, "error": "url required"})
+        max_bytes = int(args.get("max_body_bytes") or self.config.harness.site_probe_max_bytes)
+        timeout = float(args.get("timeout_seconds") or self.config.harness.site_probe_timeout_seconds)
+        result = probe_url(url, max_body_bytes=max_bytes, timeout_seconds=timeout)
+        return json.dumps(result, ensure_ascii=False)
 
     def search_similar_templates(self, args: dict[str, Any]) -> str:
         query = str(args.get("query", ""))
@@ -119,13 +131,30 @@ class ToolHandlers:
             )
         else:
             return json.dumps({"ok": False, "error": "template_json or template_id required"})
+        saved_info: dict[str, Any] = {}
         if resp.ok and tid:
             self.session.validated_template_ids.add(tid)
             self.session.last_template_id = tid
             if raw:
-                self.session.pending_template = json.loads(raw) if isinstance(raw, str) else raw
+                doc = json.loads(raw) if isinstance(raw, str) else raw
+                self.session.pending_template = doc
+                if self.config.harness.auto_save_templates:
+                    try:
+                        saved_info = persist_validated_template(
+                            client=self.client,
+                            index=self.index,
+                            session=self.session,
+                            cfg=self.config,
+                            doc=doc,
+                            template_id=tid,
+                        )
+                    except Exception as e:  # noqa: BLE001
+                        saved_info = {"save_error": str(e)}
         diags = [{"code": d.code, "path": d.path, "message": d.message} for d in resp.diagnostics]
-        return json.dumps({"ok": resp.ok, "template_id": tid, "diagnostics": diags}, ensure_ascii=False)
+        payload: dict[str, Any] = {"ok": resp.ok, "template_id": tid, "diagnostics": diags}
+        if saved_info:
+            payload["persist"] = saved_info
+        return json.dumps(payload, ensure_ascii=False)
 
     def template_author_save(self, args: dict[str, Any]) -> str:
         raw = args.get("template_json")
@@ -133,18 +162,18 @@ class ToolHandlers:
             return json.dumps({"error": "template_json required"})
         doc = json.loads(raw) if isinstance(raw, str) else raw
         tid = str(args.get("template_id") or doc.get("id") or "")
-        payload = json.dumps(doc, ensure_ascii=False).encode("utf-8")
-        resp = self.client.upsert_template(
-            template_id=tid,
-            name=str(doc.get("name") or tid),
-            json_payload=payload,
-            session_id=self.session.session_id,
-        )
-        saved = resp.template_id
-        self.session.validated_template_ids.add(saved)
-        self.session.last_template_id = saved
-        self.index.refresh()
-        return json.dumps({"template_id": saved})
+        try:
+            info = persist_validated_template(
+                client=self.client,
+                index=self.index,
+                session=self.session,
+                cfg=self.config,
+                doc=doc,
+                template_id=tid,
+            )
+        except Exception as e:  # noqa: BLE001
+            return json.dumps({"error": str(e), "code": "INTERNAL"})
+        return json.dumps(info, ensure_ascii=False)
 
     def param_filler_suggest(self, args: dict[str, Any]) -> str:
         text = str(args.get("user_text") or "")
@@ -226,9 +255,21 @@ class ToolHandlers:
         if not run_id:
             return json.dumps({"error": "no run_id"})
         phases: list[str] = []
+        messages: list[str] = []
         for ev in self.client.subscribe_run(run_id=run_id, session_id=self.session.session_id):
             phases.append(types_pb2.RunPhase.Name(ev.status.phase))
-        return json.dumps({"run_id": run_id, "phases": phases, "final": phases[-1] if phases else ""})
+            if ev.message:
+                messages.append(ev.message)
+        return json.dumps(
+            {
+                "run_id": run_id,
+                "phases": phases,
+                "messages": messages[-5:],
+                "final": phases[-1] if phases else "",
+                "hint": "Chrome 仅在检测到登录墙时才会等待 manualLoginWaitSeconds；已登录时会直接抓取。等待期间 runner_wait_for_complete 会保持 RUNNING。",
+            },
+            ensure_ascii=False,
+        )
 
     def _infer_engine(self, template_id: str) -> str:
         for doc in (

@@ -2,6 +2,7 @@ package chrome
 
 import (
 	"context"
+	"os"
 
 	"piper_go/internal/config"
 
@@ -13,9 +14,17 @@ func chromedpAllocatorOptions(cfg config.Config) []chromedp.ExecAllocatorOption 
 		chromedp.Flag("headless", cfg.Chrome.Headless),
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-blink-features", "AutomationControlled"),
+		chromedp.Flag("exclude-switches", "enable-automation"),
+		chromedp.Flag("no-first-run", true),
+		chromedp.Flag("no-default-browser-check", true),
 	)
 	if cfg.Chrome.BinaryPath != "" {
 		opts = append(opts, chromedp.ExecPath(cfg.Chrome.BinaryPath))
+	}
+	if dir := cfg.Chrome.UserDataDir; dir != "" {
+		_ = os.MkdirAll(dir, 0o755)
+		opts = append(opts, chromedp.Flag("user-data-dir", dir))
 	}
 	return opts
 }

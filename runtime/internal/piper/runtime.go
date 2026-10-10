@@ -34,12 +34,13 @@ type Runtime struct {
 }
 
 type runRecord struct {
-	tokenID   string
-	sessionID string
-	startUT   int64
-	events    []*runtimev1.RunEvent
-	done      chan struct{}
-	phase     commonv1.RunPhase
+	tokenID      string
+	sessionID    string
+	startUT      int64
+	events       []*runtimev1.RunEvent
+	done         chan struct{}
+	phase        commonv1.RunPhase
+	lastProgress time.Time
 }
 
 func NewRuntime(svc *agentruntime.Service, maxConcurrent int) *Runtime {
@@ -249,6 +250,18 @@ func (r *Runtime) watchToken(ctx context.Context, rec *runRecord) {
 			}
 			ut := int64(jsonNumber(doc["update_time"]))
 			if ut <= rec.startUT {
+				if time.Since(rec.lastProgress) >= 8*time.Second {
+					rec.lastProgress = time.Now()
+					r.appendEvent(rec, "chrome/http run in progress — if a browser is open, finish login there; this can take several minutes")
+				}
+				continue
+			}
+			finished, _ := doc["finished"].(bool)
+			if !finished {
+				if time.Since(rec.lastProgress) >= 8*time.Second {
+					rec.lastProgress = time.Now()
+					r.appendEvent(rec, "token updated, still running")
+				}
 				continue
 			}
 			ok, _ := doc["success"].(bool)

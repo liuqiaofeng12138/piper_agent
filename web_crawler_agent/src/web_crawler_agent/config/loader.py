@@ -21,6 +21,10 @@ class HarnessConfig:
     require_validate_before_run: bool = True
     max_runs_per_session: int = 10
     audit_log: Path | None = None
+    site_probe_max_bytes: int = 65536
+    site_probe_timeout_seconds: float = 25.0
+    auto_save_templates: bool = True
+    saved_templates_dir: Path | None = None
 
 
 @dataclass
@@ -71,6 +75,10 @@ def _apply_raw(cfg: AgentConfig, raw: dict[str, Any]) -> None:
     audit_path = Path(audit_raw) if audit_raw else None
     if audit_path and not audit_path.is_absolute() and cfg.config_path:
         audit_path = (cfg.config_path.parent / audit_path).resolve()
+    saved_raw = har.get("saved_templates_dir")
+    saved_path = Path(saved_raw) if saved_raw else None
+    if saved_path and not saved_path.is_absolute() and cfg.config_path:
+        saved_path = (cfg.config_path.parent / saved_path).resolve()
     cfg.harness = HarnessConfig(
         max_steps=int(har.get("max_steps", cfg.harness.max_steps)),
         require_validate_before_run=bool(
@@ -78,6 +86,12 @@ def _apply_raw(cfg: AgentConfig, raw: dict[str, Any]) -> None:
         ),
         max_runs_per_session=int(har.get("max_runs_per_session", cfg.harness.max_runs_per_session)),
         audit_log=audit_path,
+        site_probe_max_bytes=int(har.get("site_probe_max_bytes", cfg.harness.site_probe_max_bytes)),
+        site_probe_timeout_seconds=float(
+            har.get("site_probe_timeout_seconds", cfg.harness.site_probe_timeout_seconds)
+        ),
+        auto_save_templates=bool(har.get("auto_save_templates", cfg.harness.auto_save_templates)),
+        saved_templates_dir=saved_path,
     )
 
 
@@ -104,6 +118,8 @@ def worker_listen_address(path: str | Path | None = None, agent_id: str = "web_c
 def _find_repo_root() -> Path | None:
     here = Path(__file__).resolve()
     for p in here.parents:
+        if (p / "shared" / "examples").is_dir() and (p / "gateway").is_dir() and (p / "engine").is_dir():
+            return p
         if (p / "shared" / "examples").is_dir() and (p / "piper_agent").is_dir():
             return p / "piper_agent"
         if p.name == "piper_agent" and (p / "shared").is_dir():

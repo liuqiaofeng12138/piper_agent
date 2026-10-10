@@ -1,0 +1,62 @@
+{
+  "id": "weibo_lol_mymblog_chrome",
+  "name": "weibo_lol_mymblog_chrome",
+  "domain": "weibo.com",
+  "comment": "英雄联盟官博 uid=5720474518。Chrome + require_login：弹出浏览器登录后拦截 ajax/statuses/mymblog JSON，取 list[0] 最新微博。",
+  "builder": {
+    "type": "Chrome",
+    "url_tpl": "https://weibo.com/u/5720474518",
+    "require_login": true,
+    "wait_seconds": 15,
+    "wait_selector": "article[class*='Feed']",
+    "headers_tpl": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    }
+  },
+  "procedures": [
+    {
+      "_type": "one.rewind.nio.tpl.Interceptor",
+      "id": "ic_mymblog",
+      "regex": "ajax/statuses/mymblog",
+      "type": "Mapper",
+      "mapper": {
+        "_type": "one.rewind.nio.tpl.Mapper",
+        "id": "m_json",
+        "type": "Index",
+        "ref_id": "page",
+        "fields": {
+          "text": {
+            "name": "text",
+            "method": "JSONPath",
+            "path": "$.data.list[0].text_raw"
+          },
+          "publish_time": {
+            "name": "publish_time",
+            "method": "JSONPath",
+            "path": "$.data.list[0].created_at"
+          },
+          "weibo_url": {
+            "name": "weibo_url",
+            "method": "JSONPath",
+            "path": "$.data.list[0].mblogid"
+          },
+          "reposts": {
+            "name": "reposts",
+            "method": "JSONPath",
+            "path": "$.data.list[0].reposts_count"
+          },
+          "comments": {
+            "name": "comments",
+            "method": "JSONPath",
+            "path": "$.data.list[0].comments_count"
+          },
+          "likes": {
+            "name": "likes",
+            "method": "JSONPath",
+            "path": "$.data.list[0].attitudes_count"
+          }
+        }
+      }
+    }
+  ]
+}
