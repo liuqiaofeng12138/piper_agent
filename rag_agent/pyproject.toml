@@ -1,0 +1,23 @@
+[project]
+name = "rag-agent"
+version = "0.1.0"
+description = "文档 RAG 子 Agent：上传 PDF/Word 后基于 LangGraph 检索增强问答"
+requires-python = ">=3.11"
+dependencies = [
+    "grpcio>=1.60",
+    "protobuf>=4.25",
+    "pyyaml>=6.0",
+    "markitdown[pdf,docx]>=0.0.1",
+    "langgraph>=0.2.0",
+    "openai>=1.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

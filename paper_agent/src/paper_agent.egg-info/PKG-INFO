@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: paper-agent
+Version: 0.1.0
+Summary: 学术论文搜索子 Agent：联网检索 arXiv + LangGraph + LLM 汇总
+Requires-Python: >=3.11
+Requires-Dist: grpcio>=1.60
+Requires-Dist: protobuf>=4.25
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: langgraph>=0.2.0
+Requires-Dist: openai>=1.12
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4; extra == "dev"

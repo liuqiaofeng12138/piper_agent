@@ -1,0 +1,9 @@
+grpcio>=1.60
+protobuf>=4.25
+pyyaml>=6.0
+markitdown[docx,pdf]>=0.0.1
+langgraph>=0.2.0
+openai>=1.12
+
+[dev]
+pytest>=7.4

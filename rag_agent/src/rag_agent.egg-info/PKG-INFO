@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: rag-agent
+Version: 0.1.0
+Summary: 文档 RAG 子 Agent：上传 PDF/Word 后基于 LangGraph 检索增强问答
+Requires-Python: >=3.11
+Requires-Dist: grpcio>=1.60
+Requires-Dist: protobuf>=4.25
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: markitdown[docx,pdf]>=0.0.1
+Requires-Dist: langgraph>=0.2.0
+Requires-Dist: openai>=1.12
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4; extra == "dev"
