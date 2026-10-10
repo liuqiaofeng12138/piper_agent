@@ -8,4 +8,7 @@ type Store interface {
 	AppendMessage(conversationID string, role Role, content string) (Message, bool)
 	ListMessages(conversationID string) []Message
 	DeleteConversation(id string) bool
+	// PreferredAgent 本会话后续消息优先路由的 Agent（如上传文档后固定 doc_rag）。
+	GetPreferredAgent(conversationID string) string
+	SetPreferredAgent(conversationID string, agentID string) bool
 }

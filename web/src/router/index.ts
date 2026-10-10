@@ -8,12 +8,17 @@ const router = createRouter({
       path: '/',
       component: ChatLayout,
       children: [
-        { path: '', name: 'chat-new', component: () => import('@/views/ChatView.vue') },
         {
-          path: 'c/:conversationId',
+          path: '',
           name: 'chat',
           component: () => import('@/views/ChatView.vue'),
-          props: true,
+        },
+        {
+          path: 'c/:conversationId',
+          redirect: (to) => ({
+            name: 'chat',
+            query: { c: to.params.conversationId as string },
+          }),
         },
       ],
     },

@@ -6,10 +6,14 @@ import Composer from '@/components/Composer.vue'
 import MessageList from '@/components/MessageList.vue'
 import { useChatStore } from '@/stores/chat'
 
-const props = defineProps<{ conversationId?: string }>()
 const store = useChatStore()
 const route = useRoute()
 const router = useRouter()
+
+const conversationIdFromRoute = computed(() => {
+  const q = route.query.c
+  return typeof q === 'string' && q.length > 0 ? q : undefined
+})
 
 const isEmpty = computed(
   () => !store.loadingHistory && store.messages.length === 0 && !store.streaming,
@@ -21,35 +25,39 @@ const suggestions = [
   '用 Chrome 模式抓取需要登录的列表页',
 ]
 
-async function syncRouteConversation(id: string | undefined) {
+async function syncRouteConversation(id: string | undefined, force = false) {
   if (!id) return
-  const ok = await store.loadConversation(id)
+  const ok = await store.loadConversation(id, { force })
   if (!ok) {
-    await router.replace({ name: 'chat-new' })
+    await router.replace({ name: 'chat', query: {} })
   }
 }
 
 onMounted(() => {
-  void syncRouteConversation(props.conversationId)
+  void syncRouteConversation(conversationIdFromRoute.value, true)
   void store.refreshAgents()
   void store.refreshHealth()
 })
 
+watch(conversationIdFromRoute, (id, prev) => {
+  if (id === prev) return
+  if (typeof id === 'string') {
+    void syncRouteConversation(id, true)
+  } else if (!store.streaming) {
+    store.resetForNewChat()
+  }
+})
+
 watch(
-  () => route.params.conversationId,
-  (id) => {
-    if (typeof id === 'string') {
-      void syncRouteConversation(id)
-    }
+  () => store.activeConversationId,
+  (cid) => {
+    if (!cid || conversationIdFromRoute.value === cid) return
+    void router.replace({ name: 'chat', query: { c: cid } })
   },
 )
 
-async function onSend(text: string) {
-  await store.sendMessage(text)
-  const cid = store.activeConversationId
-  if (cid && route.name === 'chat-new') {
-    await router.replace({ name: 'chat', params: { conversationId: cid } })
-  }
+async function onSend(text: string, files?: File[]) {
+  await store.sendMessage(text, files)
 }
 
 function onSuggestion(text: string) {
@@ -77,7 +85,7 @@ function onSuggestion(text: string) {
           <img src="/favicon.svg" alt="" width="48" height="48" />
         </div>
         <h2>我是 Piper Agent，有什么可以帮您？</h2>
-        <p class="sub">描述你的采集需求，W2 起将自动执行 Piper 模版与抓取任务。</p>
+        <p class="sub">可描述采集需求，或上传 PDF/Word 进行文档问答（上传后自动走文档 Agent）。</p>
         <div class="chips">
           <button
             v-for="s in suggestions"

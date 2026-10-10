@@ -11,12 +11,20 @@ service AgentWorkerService {
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 
+// 随聊天请求附带的原始文件（由网关 multipart 上传解析后转发给文档 RAG Worker）。
+message UploadedDocument {
+  string filename = 1;
+  string mime_type = 2;
+  bytes data = 3;
+}
+
 message ExecuteRequest {
   string trace_id = 1;
   string conversation_id = 2;
   string run_id = 3;
   string agent_id = 4;
   string user_message = 5;
+  repeated UploadedDocument documents = 6;
 }
 
 message ExecuteEvent {

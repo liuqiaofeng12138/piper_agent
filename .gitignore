@@ -5,6 +5,7 @@
 # Python
 /general_agent/.venv/
 /web_crawler_agent/.venv/
+/rag_agent/.venv/
 /general_agent/**/__pycache__/
 /web_crawler_agent/**/__pycache__/
 /general_agent/**/*.egg-info/

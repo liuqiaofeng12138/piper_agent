@@ -29,15 +29,17 @@ type Conversation struct {
 }
 
 type MemoryStore struct {
-	mu            sync.RWMutex
-	conversations map[string]*Conversation
-	messages      map[string][]Message
+	mu              sync.RWMutex
+	conversations   map[string]*Conversation
+	messages        map[string][]Message
+	preferredAgents map[string]string
 }
 
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
-		conversations: make(map[string]*Conversation),
-		messages:      make(map[string][]Message),
+		conversations:   make(map[string]*Conversation),
+		messages:        make(map[string][]Message),
+		preferredAgents: make(map[string]string),
 	}
 }
 
@@ -117,6 +119,28 @@ func (s *MemoryStore) DeleteConversation(id string) bool {
 	}
 	delete(s.conversations, id)
 	delete(s.messages, id)
+	delete(s.preferredAgents, id)
+	return true
+}
+
+func (s *MemoryStore) GetPreferredAgent(conversationID string) string {
+	s.mu.RLock()
+	agent := s.preferredAgents[conversationID]
+	s.mu.RUnlock()
+	return agent
+}
+
+func (s *MemoryStore) SetPreferredAgent(conversationID string, agentID string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.conversations[conversationID]; !ok {
+		return false
+	}
+	if agentID == "" {
+		delete(s.preferredAgents, conversationID)
+		return true
+	}
+	s.preferredAgents[conversationID] = agentID
 	return true
 }
 

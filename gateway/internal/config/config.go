@@ -16,6 +16,7 @@ type Config struct {
 	Classifier          ClassifierConfig `yaml:"classifier"`
 	ChatTimeoutSeconds  int              `yaml:"chat_timeout_seconds"`
 	MaxRequestBodyBytes int64            `yaml:"max_request_body_bytes"`
+	MaxUploadBodyBytes  int64            `yaml:"max_upload_body_bytes"`
 	RateLimitPerMinute  int              `yaml:"rate_limit_per_minute"`
 	RuntimeAddress      string           `yaml:"-"`
 	LLM                 LLMConfig        `yaml:"-"`
@@ -54,7 +55,8 @@ type AgentSpec struct {
 	Address     string `yaml:"address"`
 	Enabled     bool   `yaml:"enabled"`
 	Default     bool   `yaml:"default"`
-	Module      string `yaml:"module"` // Python worker 模块，默认 piper_agent.workers.<id>
+	Module        string `yaml:"module"`         // Python worker 模块，默认 piper_agent.workers.<id>
+	PythonProject string `yaml:"python_project"` // 独占 .venv 的项目目录名（默认从 module 推断）
 }
 
 // WorkerModule 返回启动该 Agent 的 Python 模块路径。
@@ -127,6 +129,7 @@ func Load(path string) (*Config, error) {
 		Classifier:         ClassifierConfig{Mode: "rule", TimeoutMs: 4000},
 		ChatTimeoutSeconds: 600,
 		MaxRequestBodyBytes: 1 << 20,
+		MaxUploadBodyBytes:  32 << 20,
 		RateLimitPerMinute:  60,
 		Agents:             defaultAgents(),
 	}
@@ -153,6 +156,9 @@ func Load(path string) (*Config, error) {
 		}
 		if v, ok := intFromYAML(gw["max_request_body_bytes"]); ok && v > 0 {
 			cfg.MaxRequestBodyBytes = int64(v)
+		}
+		if v, ok := intFromYAML(gw["max_upload_body_bytes"]); ok && v > 0 {
+			cfg.MaxUploadBodyBytes = int64(v)
 		}
 		if v, ok := intFromYAML(gw["rate_limit_per_minute"]); ok && v > 0 {
 			cfg.RateLimitPerMinute = v
@@ -278,6 +284,9 @@ func agentFromMap(id string, m map[string]any) AgentSpec {
 	}
 	if v, ok := m["module"].(string); ok {
 		spec.Module = v
+	}
+	if v, ok := m["python_project"].(string); ok {
+		spec.PythonProject = v
 	}
 	if spec.DisplayName == "" {
 		spec.DisplayName = spec.ID

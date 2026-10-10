@@ -58,7 +58,11 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, created_at);
 `)
-	return err
+	if err != nil {
+		return err
+	}
+	_, _ = s.db.Exec(`ALTER TABLE conversations ADD COLUMN preferred_agent TEXT NOT NULL DEFAULT ''`)
+	return nil
 }
 
 func (s *SQLiteStore) CreateConversation(title string) *Conversation {
@@ -147,6 +151,30 @@ func (s *SQLiteStore) AppendMessage(conversationID string, role Role, content st
 			msg.CreatedAt.Format(time.RFC3339Nano), conversationID)
 	}
 	return msg, true
+}
+
+func (s *SQLiteStore) GetPreferredAgent(conversationID string) string {
+	var agent string
+	err := s.db.QueryRow(
+		`SELECT preferred_agent FROM conversations WHERE id=?`,
+		conversationID,
+	).Scan(&agent)
+	if err != nil || agent == "" {
+		return ""
+	}
+	return agent
+}
+
+func (s *SQLiteStore) SetPreferredAgent(conversationID string, agentID string) bool {
+	res, err := s.db.Exec(
+		`UPDATE conversations SET preferred_agent=? WHERE id=?`,
+		agentID, conversationID,
+	)
+	if err != nil {
+		return false
+	}
+	n, _ := res.RowsAffected()
+	return n > 0
 }
 
 func (s *SQLiteStore) DeleteConversation(id string) bool {

@@ -11,20 +11,24 @@ const router = useRouter()
 const conversationList = computed(() => store.conversations ?? [])
 
 const activeId = computed(() => {
-  const id = route.params.conversationId
-  return typeof id === 'string' ? id : store.activeConversationId
+  const q = route.query.c
+  if (typeof q === 'string' && q.length > 0) return q
+  return store.activeConversationId
 })
 
 function selectConversation(id: string) {
-  void store.loadConversation(id)
-  void router.push({ name: 'chat', params: { conversationId: id } })
+  if (id === store.activeConversationId && route.query.c === id) {
+    return
+  }
+  void store.loadConversation(id, { force: true })
+  void router.push({ name: 'chat', query: { c: id } })
 }
 
 async function onDelete(id: string) {
   if (!window.confirm('确定删除该对话？此操作不可恢复。')) return
   await store.removeConversation(id)
-  if (route.params.conversationId === id) {
-    void router.push({ name: 'chat-new' })
+  if (route.query.c === id) {
+    void router.push({ name: 'chat', query: {} })
   }
 }
 </script>

@@ -13,7 +13,7 @@ onMounted(() => {
 
 function onNewChat() {
   store.resetForNewChat()
-  void router.push({ name: 'chat-new' })
+  void router.push({ name: 'chat', query: {} })
 }
 </script>
 

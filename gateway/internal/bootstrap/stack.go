@@ -134,7 +134,10 @@ func startRuntime(ctx context.Context, configPath string, repoRoot string) (*exe
 }
 
 func startWorker(ctx context.Context, configPath string, repoRoot string, agent config.AgentSpec) (*exec.Cmd, error) {
-	name, args, env := workerCommand(configPath, repoRoot, agent)
+	name, args, env, err := workerCommand(configPath, repoRoot, agent)
+	if err != nil {
+		return nil, err
+	}
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Env = append(os.Environ(), env...)
 	cmd.Dir = repoRoot
@@ -147,12 +150,9 @@ func startWorker(ctx context.Context, configPath string, repoRoot string, agent 
 }
 
 // workerCommand 启动 gRPC Worker（python -m <agent.Module>），不经 CLI。
-// PYTHONPATH 同时覆盖 web_crawler_agent（采集 Agent）与 general_agent（通用 Agent）两个 Python 项目。
-func workerCommand(configPath string, repoRoot string, agent config.AgentSpec) (string, []string, []string) {
-	srcDirs := []string{
-		filepath.Join(repoRoot, "web_crawler_agent", "src"),
-		filepath.Join(repoRoot, "general_agent", "src"),
-	}
+// 每个 Agent 仅使用其 python_project（或 module 推断）目录下的 .venv，不与其他 Agent 共用虚拟环境。
+func workerCommand(configPath string, repoRoot string, agent config.AgentSpec) (string, []string, []string, error) {
+	srcDirs := discoverAgentSrcDirs(repoRoot)
 	extraEnv := []string{
 		fmt.Sprintf("PYTHONPATH=%s", strings.Join(srcDirs, string(os.PathListSeparator))),
 	}
@@ -163,27 +163,15 @@ func workerCommand(configPath string, repoRoot string, agent config.AgentSpec) (
 	}
 
 	if override := os.Getenv("PIPER_WORKER_PYTHON"); override != "" {
-		return override, moduleArgs, extraEnv
+		return override, moduleArgs, extraEnv, nil
 	}
 
-	// 优先 web_crawler_agent/.venv，其次 general_agent/.venv（两者依赖相同，可共用）
-	for _, proj := range []string{"web_crawler_agent", "general_agent"} {
-		venvPy := filepath.Join(repoRoot, proj, ".venv", "Scripts", "python.exe")
-		if runtime.GOOS != "windows" {
-			venvPy = filepath.Join(repoRoot, proj, ".venv", "bin", "python")
-		}
-		if fileExists(venvPy) {
-			return venvPy, moduleArgs, extraEnv
-		}
+	py, proj, err := resolveWorkerPython(repoRoot, agent)
+	if err != nil {
+		return "", nil, nil, fmt.Errorf("worker %s: %w", agent.ID, err)
 	}
-
-	py := "python"
-	if p, err := exec.LookPath("python3"); err == nil {
-		py = p
-	} else if p, err := exec.LookPath("python"); err == nil {
-		py = p
-	}
-	return py, moduleArgs, extraEnv
+	log.Printf("worker %s using python project %s (%s)", agent.ID, proj, py)
+	return py, moduleArgs, extraEnv, nil
 }
 
 func yamlListen(configPath string, key string, fallback string) string {
@@ -204,7 +192,9 @@ func yamlListen(configPath string, key string, fallback string) string {
 func findRepoRoot(configPath string) string {
 	dir := filepath.Dir(configPath)
 	for i := 0; i < 6; i++ {
-		if fileExists(filepath.Join(dir, "go.work")) || fileExists(filepath.Join(dir, "general_agent", "pyproject.toml")) {
+		if fileExists(filepath.Join(dir, "go.work")) ||
+			fileExists(filepath.Join(dir, "general_agent", "pyproject.toml")) ||
+			fileExists(filepath.Join(dir, "rag_agent", "pyproject.toml")) {
 			return dir
 		}
 		parent := filepath.Dir(dir)

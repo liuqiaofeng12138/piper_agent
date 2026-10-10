@@ -13,7 +13,11 @@ go run ./cmd/piper-serve -f ../deploy/config/local.yaml
 
 按顺序子进程启动 `piper-runtime`，再为 `agents` 注册表中每个 `enabled: true` 的 Agent 拉起对应 Python Worker（`python -m <module>`，由注册表 `module` 字段指定），最后在本进程监听 HTTP（默认 `:8080`）。  
 优先使用 `runtime/piper-runtime.exe`（若已编译），否则 `go run ./cmd/piper-runtime`。  
-Python 优先 `web_crawler_agent/.venv`，其次 `general_agent/.venv`，否则系统 `python` / `python3`；Worker 的 `PYTHONPATH` 同时覆盖 `web_crawler_agent/src` 与 `general_agent/src`。
+每个 Worker **仅**使用其独占的 `.venv`（由 `module` 首包名推断项目目录，`piper_agent.*` → `general_agent/`；也可用 `agents[].python_project` 覆盖）。**不会**回退到其他 Agent 的 venv 或系统 Python；缺少 `.venv` 时 `piper-serve` 启动失败，请先运行 `scripts/setup-python-venvs.ps1`。
+
+`PYTHONPATH` 自动包含仓库根下所有含 `pyproject.toml` 的项目的 `src/`（新增 `*_agent` 目录会被自动发现）。
+
+环境变量 `PIPER_WORKER_PYTHON` 可覆盖解释器（容器/调试，会跳过上述 .venv 检查）。
 
 环境变量：`PIPER_RUNTIME_CMD` 覆盖 Runtime 可执行文件；`PIPER_WORKER_PYTHON` 覆盖 Worker 用的 Python 解释器。
 

@@ -74,13 +74,21 @@ func withRateLimit(perMinute int, next http.Handler) http.Handler {
 	})
 }
 
-func withMaxBody(maxBytes int64, next http.Handler) http.Handler {
-	if maxBytes <= 0 {
-		maxBytes = 1 << 20
+func withMaxBody(defaultMax int64, uploadMax int64, next http.Handler) http.Handler {
+	if defaultMax <= 0 {
+		defaultMax = 1 << 20
+	}
+	if uploadMax <= 0 {
+		uploadMax = 32 << 20
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost || r.Method == http.MethodPut {
-			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+			limit := defaultMax
+			if r.URL.Path == "/api/v1/chat/completions" &&
+				strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+				limit = uploadMax
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, limit)
 		}
 		next.ServeHTTP(w, r)
 	})

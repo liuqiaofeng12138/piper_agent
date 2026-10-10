@@ -50,6 +50,7 @@ gateway:
   listen: ":8080"
   chat_timeout_seconds: 600
   max_request_body_bytes: 1048576
+  max_upload_body_bytes: 33554432
   rate_limit_per_minute: 60
   auth:
     mode: none
@@ -63,8 +64,9 @@ gateway:
     timeout_ms: 4000
 
 # 子 Agent 注册表（列表格式；也兼容旧的 map 格式 agents.web_crawler.listen）
-# module 为该 Agent 的 Python Worker 模块（默认 piper_agent.workers.<id>）；
-# piper-serve 启动时 PYTHONPATH 会同时覆盖 web_crawler_agent/src 与 general_agent/src。
+# module：Python Worker 模块（默认 piper_agent.workers.<id>）。
+# python_project（可选）：含 .venv 的目录名；默认从 module 推断（piper_agent.* → general_agent）。
+# piper-serve 为每个 enabled Agent 仅使用其 python_project/.venv，不共用虚拟环境。
 agents:
   - id: web_crawler
     display_name: "网页采集"
@@ -79,6 +81,30 @@ agents:
     enabled: true
     default: true       # 意图未命中时的兜底 Agent
     module: piper_agent.workers.general_chat    # general_agent 项目（平台通用）
+  - id: doc_rag
+    display_name: "文档问答"
+    description: "上传 PDF/Word 文档后基于文档内容问答（Web 上传文件时自动路由，跳过意图识别）"
+    listen: "127.0.0.1:15063"
+    enabled: true
+    module: rag_agent.workers.doc_rag
+  - id: paper_search
+    display_name: "论文检索"
+    description: "联网检索 arXiv 学术论文并由大模型汇总展示"
+    listen: "127.0.0.1:15064"
+    enabled: true
+    module: paper_agent.workers.paper_search
+
+# 文档 RAG（可选，未配置时使用内置默认值）
+rag:
+  chunk_size: 900
+  chunk_overlap: 120
+  top_k: 8
+
+# 论文检索（paper_search Agent，可选）
+paper_search:
+  max_results_cap: 20
+  arxiv_timeout_seconds: 30
+  max_history_messages: 24
 
 llm:
   provider: openai

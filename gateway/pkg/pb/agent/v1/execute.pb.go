@@ -21,6 +21,67 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 随聊天请求附带的原始文件（由网关 multipart 上传解析后转发给文档 RAG Worker）。
+type UploadedDocument struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Filename      string                 `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"`
+	MimeType      string                 `protobuf:"bytes,2,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	Data          []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadedDocument) Reset() {
+	*x = UploadedDocument{}
+	mi := &file_agent_v1_execute_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadedDocument) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadedDocument) ProtoMessage() {}
+
+func (x *UploadedDocument) ProtoReflect() protoreflect.Message {
+	mi := &file_agent_v1_execute_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadedDocument.ProtoReflect.Descriptor instead.
+func (*UploadedDocument) Descriptor() ([]byte, []int) {
+	return file_agent_v1_execute_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *UploadedDocument) GetFilename() string {
+	if x != nil {
+		return x.Filename
+	}
+	return ""
+}
+
+func (x *UploadedDocument) GetMimeType() string {
+	if x != nil {
+		return x.MimeType
+	}
+	return ""
+}
+
+func (x *UploadedDocument) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type ExecuteRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	TraceId        string                 `protobuf:"bytes,1,opt,name=trace_id,json=traceId,proto3" json:"trace_id,omitempty"`
@@ -28,13 +89,14 @@ type ExecuteRequest struct {
 	RunId          string                 `protobuf:"bytes,3,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
 	AgentId        string                 `protobuf:"bytes,4,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
 	UserMessage    string                 `protobuf:"bytes,5,opt,name=user_message,json=userMessage,proto3" json:"user_message,omitempty"`
+	Documents      []*UploadedDocument    `protobuf:"bytes,6,rep,name=documents,proto3" json:"documents,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ExecuteRequest) Reset() {
 	*x = ExecuteRequest{}
-	mi := &file_agent_v1_execute_proto_msgTypes[0]
+	mi := &file_agent_v1_execute_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +108,7 @@ func (x *ExecuteRequest) String() string {
 func (*ExecuteRequest) ProtoMessage() {}
 
 func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_v1_execute_proto_msgTypes[0]
+	mi := &file_agent_v1_execute_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +121,7 @@ func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecuteRequest.ProtoReflect.Descriptor instead.
 func (*ExecuteRequest) Descriptor() ([]byte, []int) {
-	return file_agent_v1_execute_proto_rawDescGZIP(), []int{0}
+	return file_agent_v1_execute_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ExecuteRequest) GetTraceId() string {
@@ -97,6 +159,13 @@ func (x *ExecuteRequest) GetUserMessage() string {
 	return ""
 }
 
+func (x *ExecuteRequest) GetDocuments() []*UploadedDocument {
+	if x != nil {
+		return x.Documents
+	}
+	return nil
+}
+
 type ExecuteEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
@@ -111,7 +180,7 @@ type ExecuteEvent struct {
 
 func (x *ExecuteEvent) Reset() {
 	*x = ExecuteEvent{}
-	mi := &file_agent_v1_execute_proto_msgTypes[1]
+	mi := &file_agent_v1_execute_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -123,7 +192,7 @@ func (x *ExecuteEvent) String() string {
 func (*ExecuteEvent) ProtoMessage() {}
 
 func (x *ExecuteEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_v1_execute_proto_msgTypes[1]
+	mi := &file_agent_v1_execute_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -136,7 +205,7 @@ func (x *ExecuteEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecuteEvent.ProtoReflect.Descriptor instead.
 func (*ExecuteEvent) Descriptor() ([]byte, []int) {
-	return file_agent_v1_execute_proto_rawDescGZIP(), []int{1}
+	return file_agent_v1_execute_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ExecuteEvent) GetType() string {
@@ -190,7 +259,7 @@ type CancelRequest struct {
 
 func (x *CancelRequest) Reset() {
 	*x = CancelRequest{}
-	mi := &file_agent_v1_execute_proto_msgTypes[2]
+	mi := &file_agent_v1_execute_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -202,7 +271,7 @@ func (x *CancelRequest) String() string {
 func (*CancelRequest) ProtoMessage() {}
 
 func (x *CancelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_v1_execute_proto_msgTypes[2]
+	mi := &file_agent_v1_execute_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -215,7 +284,7 @@ func (x *CancelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelRequest.ProtoReflect.Descriptor instead.
 func (*CancelRequest) Descriptor() ([]byte, []int) {
-	return file_agent_v1_execute_proto_rawDescGZIP(), []int{2}
+	return file_agent_v1_execute_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CancelRequest) GetRunId() string {
@@ -235,7 +304,7 @@ type CancelResponse struct {
 
 func (x *CancelResponse) Reset() {
 	*x = CancelResponse{}
-	mi := &file_agent_v1_execute_proto_msgTypes[3]
+	mi := &file_agent_v1_execute_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -247,7 +316,7 @@ func (x *CancelResponse) String() string {
 func (*CancelResponse) ProtoMessage() {}
 
 func (x *CancelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_v1_execute_proto_msgTypes[3]
+	mi := &file_agent_v1_execute_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -260,7 +329,7 @@ func (x *CancelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelResponse.ProtoReflect.Descriptor instead.
 func (*CancelResponse) Descriptor() ([]byte, []int) {
-	return file_agent_v1_execute_proto_rawDescGZIP(), []int{3}
+	return file_agent_v1_execute_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CancelResponse) GetOk() bool {
@@ -285,7 +354,7 @@ type HealthRequest struct {
 
 func (x *HealthRequest) Reset() {
 	*x = HealthRequest{}
-	mi := &file_agent_v1_execute_proto_msgTypes[4]
+	mi := &file_agent_v1_execute_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -297,7 +366,7 @@ func (x *HealthRequest) String() string {
 func (*HealthRequest) ProtoMessage() {}
 
 func (x *HealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_v1_execute_proto_msgTypes[4]
+	mi := &file_agent_v1_execute_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -310,7 +379,7 @@ func (x *HealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
 func (*HealthRequest) Descriptor() ([]byte, []int) {
-	return file_agent_v1_execute_proto_rawDescGZIP(), []int{4}
+	return file_agent_v1_execute_proto_rawDescGZIP(), []int{5}
 }
 
 type HealthResponse struct {
@@ -323,7 +392,7 @@ type HealthResponse struct {
 
 func (x *HealthResponse) Reset() {
 	*x = HealthResponse{}
-	mi := &file_agent_v1_execute_proto_msgTypes[5]
+	mi := &file_agent_v1_execute_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -335,7 +404,7 @@ func (x *HealthResponse) String() string {
 func (*HealthResponse) ProtoMessage() {}
 
 func (x *HealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_v1_execute_proto_msgTypes[5]
+	mi := &file_agent_v1_execute_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -348,7 +417,7 @@ func (x *HealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
 func (*HealthResponse) Descriptor() ([]byte, []int) {
-	return file_agent_v1_execute_proto_rawDescGZIP(), []int{5}
+	return file_agent_v1_execute_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *HealthResponse) GetStatus() string {
@@ -369,13 +438,18 @@ var File_agent_v1_execute_proto protoreflect.FileDescriptor
 
 const file_agent_v1_execute_proto_rawDesc = "" +
 	"\n" +
-	"\x16agent/v1/execute.proto\x12\bagent.v1\"\xa9\x01\n" +
+	"\x16agent/v1/execute.proto\x12\bagent.v1\"_\n" +
+	"\x10UploadedDocument\x12\x1a\n" +
+	"\bfilename\x18\x01 \x01(\tR\bfilename\x12\x1b\n" +
+	"\tmime_type\x18\x02 \x01(\tR\bmimeType\x12\x12\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\"\xe3\x01\n" +
 	"\x0eExecuteRequest\x12\x19\n" +
 	"\btrace_id\x18\x01 \x01(\tR\atraceId\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x15\n" +
 	"\x06run_id\x18\x03 \x01(\tR\x05runId\x12\x19\n" +
 	"\bagent_id\x18\x04 \x01(\tR\aagentId\x12!\n" +
-	"\fuser_message\x18\x05 \x01(\tR\vuserMessage\"\xaa\x01\n" +
+	"\fuser_message\x18\x05 \x01(\tR\vuserMessage\x128\n" +
+	"\tdocuments\x18\x06 \x03(\v2\x1a.agent.v1.UploadedDocumentR\tdocuments\"\xaa\x01\n" +
 	"\fExecuteEvent\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x14\n" +
 	"\x05delta\x18\x02 \x01(\tR\x05delta\x12\x18\n" +
@@ -410,27 +484,29 @@ func file_agent_v1_execute_proto_rawDescGZIP() []byte {
 	return file_agent_v1_execute_proto_rawDescData
 }
 
-var file_agent_v1_execute_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_agent_v1_execute_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_agent_v1_execute_proto_goTypes = []any{
-	(*ExecuteRequest)(nil), // 0: agent.v1.ExecuteRequest
-	(*ExecuteEvent)(nil),   // 1: agent.v1.ExecuteEvent
-	(*CancelRequest)(nil),  // 2: agent.v1.CancelRequest
-	(*CancelResponse)(nil), // 3: agent.v1.CancelResponse
-	(*HealthRequest)(nil),  // 4: agent.v1.HealthRequest
-	(*HealthResponse)(nil), // 5: agent.v1.HealthResponse
+	(*UploadedDocument)(nil), // 0: agent.v1.UploadedDocument
+	(*ExecuteRequest)(nil),   // 1: agent.v1.ExecuteRequest
+	(*ExecuteEvent)(nil),     // 2: agent.v1.ExecuteEvent
+	(*CancelRequest)(nil),    // 3: agent.v1.CancelRequest
+	(*CancelResponse)(nil),   // 4: agent.v1.CancelResponse
+	(*HealthRequest)(nil),    // 5: agent.v1.HealthRequest
+	(*HealthResponse)(nil),   // 6: agent.v1.HealthResponse
 }
 var file_agent_v1_execute_proto_depIdxs = []int32{
-	0, // 0: agent.v1.AgentWorkerService.Execute:input_type -> agent.v1.ExecuteRequest
-	2, // 1: agent.v1.AgentWorkerService.Cancel:input_type -> agent.v1.CancelRequest
-	4, // 2: agent.v1.AgentWorkerService.Health:input_type -> agent.v1.HealthRequest
-	1, // 3: agent.v1.AgentWorkerService.Execute:output_type -> agent.v1.ExecuteEvent
-	3, // 4: agent.v1.AgentWorkerService.Cancel:output_type -> agent.v1.CancelResponse
-	5, // 5: agent.v1.AgentWorkerService.Health:output_type -> agent.v1.HealthResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: agent.v1.ExecuteRequest.documents:type_name -> agent.v1.UploadedDocument
+	1, // 1: agent.v1.AgentWorkerService.Execute:input_type -> agent.v1.ExecuteRequest
+	3, // 2: agent.v1.AgentWorkerService.Cancel:input_type -> agent.v1.CancelRequest
+	5, // 3: agent.v1.AgentWorkerService.Health:input_type -> agent.v1.HealthRequest
+	2, // 4: agent.v1.AgentWorkerService.Execute:output_type -> agent.v1.ExecuteEvent
+	4, // 5: agent.v1.AgentWorkerService.Cancel:output_type -> agent.v1.CancelResponse
+	6, // 6: agent.v1.AgentWorkerService.Health:output_type -> agent.v1.HealthResponse
+	4, // [4:7] is the sub-list for method output_type
+	1, // [1:4] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_agent_v1_execute_proto_init() }
@@ -444,7 +520,7 @@ func file_agent_v1_execute_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_agent_v1_execute_proto_rawDesc), len(file_agent_v1_execute_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

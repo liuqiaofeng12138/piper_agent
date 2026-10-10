@@ -153,21 +153,17 @@ func (s *Server) deleteConversation(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type chatRequest struct {
-	ConversationID string `json:"conversation_id"`
-	Message        string `json:"message"`
-	Stream         bool   `json:"stream"`
-}
-
 func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
-	var req chatRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid json", http.StatusBadRequest)
+	parsed, err := parseChatRequest(r, s.deps.Config.MaxUploadBodyBytes)
+	if err != nil {
+		http.Error(w, "invalid request: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	req := parsed.Request
 	req.Message = strings.TrimSpace(req.Message)
-	if req.Message == "" {
-		http.Error(w, "message is required", http.StatusBadRequest)
+	docCount := len(parsed.Documents)
+	if req.Message == "" && docCount == 0 {
+		http.Error(w, "message or files required", http.StatusBadRequest)
 		return
 	}
 
@@ -180,11 +176,31 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _ = s.deps.Store.AppendMessage(convID, session.RoleUser, req.Message)
+	userDisplay := req.Message
+	if docCount > 0 {
+		names := make([]string, 0, docCount)
+		for _, d := range parsed.Documents {
+			if d.Filename != "" {
+				names = append(names, d.Filename)
+			}
+		}
+		if len(names) > 0 {
+			userDisplay = strings.TrimSpace(req.Message + "\n\n[附件: " + strings.Join(names, ", ") + "]")
+		}
+	}
+	_, _ = s.deps.Store.AppendMessage(convID, session.RoleUser, userDisplay)
 
 	runID := "r_" + uuid.NewString()
 	traceID := traceIDFromContext(r.Context())
-	agentID, routeReason := s.deps.Router.Classify(r.Context(), req.Message)
+	agentID, routeReason := resolveChatAgent(
+		r.Context(),
+		s.deps.Store,
+		s.deps.Config,
+		s.deps.Router,
+		convID,
+		req.Message,
+		docCount,
+	)
 
 	log.Printf("[chat] start trace=%s conv=%s run=%s agent=%s route=%q msg_len=%d",
 		traceID, convID, runID, agentID, routeReason, len(req.Message))
@@ -211,6 +227,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		RunId:          runID,
 		AgentId:        agentID,
 		UserMessage:    req.Message,
+		Documents:      parsed.Documents,
 	}
 
 	if !req.Stream {
@@ -253,7 +270,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		flusher.Flush()
 	}
 
-	err := worker.Execute(ctx, grpcReq, func(ev *agentv1.ExecuteEvent) error {
+	err = worker.Execute(ctx, grpcReq, func(ev *agentv1.ExecuteEvent) error {
 		if r.Context().Err() != nil {
 			return r.Context().Err()
 		}
@@ -298,6 +315,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 	if final != "" {
 		_, _ = s.deps.Store.AppendMessage(convID, session.RoleAssistant, final)
 	}
+	send(map[string]any{"type": "stream.end"})
 	log.Printf("[chat] done trace=%s run=%s reply_len=%d", traceID, runID, len(final))
 }
 
@@ -361,7 +379,7 @@ func NewHandler(deps *Deps, authToken string) http.Handler {
 	mux := http.NewServeMux()
 	srv.Register(mux)
 	var h http.Handler = mux
-	h = withMaxBody(deps.Config.MaxRequestBodyBytes, h)
+	h = withMaxBody(deps.Config.MaxRequestBodyBytes, deps.Config.MaxUploadBodyBytes, h)
 	h = withRateLimit(deps.Config.RateLimitPerMinute, h)
 	h = withTraceID(h)
 	h = withCORS(h)

@@ -50,20 +50,39 @@ export async function deleteConversation(conversationId: string): Promise<void> 
 export interface ChatStreamOptions {
   conversationId?: string
   message: string
+  files?: File[]
   signal?: AbortSignal
   onEvent: (ev: StreamEvent) => void
 }
 
 export async function chatStream(opts: ChatStreamOptions): Promise<void> {
-  const res = await fetch(`${base}/chat/completions`, {
-    method: 'POST',
-    signal: opts.signal,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  const headers: Record<string, string> = {
+    Accept: 'text/event-stream',
+    'Cache-Control': 'no-cache',
+  }
+  let body: BodyInit
+  if (opts.files && opts.files.length > 0) {
+    const fd = new FormData()
+    if (opts.conversationId) fd.append('conversation_id', opts.conversationId)
+    fd.append('message', opts.message)
+    fd.append('stream', 'true')
+    for (const f of opts.files) {
+      fd.append('files', f, f.name)
+    }
+    body = fd
+  } else {
+    headers['Content-Type'] = 'application/json'
+    body = JSON.stringify({
       conversation_id: opts.conversationId || undefined,
       message: opts.message,
       stream: true,
-    }),
+    })
+  }
+  const res = await fetch(`${base}/chat/completions`, {
+    method: 'POST',
+    signal: opts.signal,
+    headers,
+    body,
   })
   if (!res.ok) {
     throw new Error(await res.text())

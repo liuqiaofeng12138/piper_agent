@@ -37,6 +37,18 @@ func New(cfg *config.Config) *Engine {
 
 // Classify 返回选中的 agent_id 与路由原因（用于审计日志）。
 func (e *Engine) Classify(ctx context.Context, userMessage string) (string, string) {
+	return e.ClassifyWithAttachments(ctx, userMessage, 0)
+}
+
+// ClassifyWithAttachments 若附带文档则跳过意图识别，直达 doc_rag。
+func (e *Engine) ClassifyWithAttachments(ctx context.Context, userMessage string, documentCount int) (string, string) {
+	if documentCount > 0 {
+		for _, a := range e.agents {
+			if a.ID == AgentDocRAG {
+				return AgentDocRAG, "upload: 附带文档，直达文档问答 Agent"
+			}
+		}
+	}
 	if e.mode == "llm" && e.classifier != nil && len(e.agents) > 1 {
 		if id, reason, ok := e.classifier.Classify(ctx, userMessage, e.agents); ok {
 			return id, "llm: " + reason
@@ -49,6 +61,9 @@ func (e *Engine) Classify(ctx context.Context, userMessage string) (string, stri
 func (e *Engine) classifyByRule(msg string) (string, string) {
 	if id := matchWebCrawlerKeywords(msg, e.agents); id != "" {
 		return id, "rule: 命中采集关键词"
+	}
+	if id := matchPaperSearchKeywords(msg, e.agents); id != "" {
+		return id, "rule: 命中论文检索关键词"
 	}
 	if e.defaultID != "" {
 		return e.defaultID, "rule: 默认路由"
@@ -75,6 +90,31 @@ func matchWebCrawlerKeywords(msg string, agents []config.AgentSpec) string {
 	}
 	for _, a := range agents {
 		if a.ID == "web_crawler" {
+			return a.ID
+		}
+	}
+	return ""
+}
+
+// matchPaperSearchKeywords 命中学术论文检索类关键词时返回 paper_search Agent。
+func matchPaperSearchKeywords(msg string, agents []config.AgentSpec) string {
+	lower := strings.ToLower(msg)
+	keywords := []string{
+		"论文", "文献", "arxiv", "学术", "paper", "papers", "publication",
+		"期刊", "会议", "citation", "cite", "综述",
+	}
+	matched := false
+	for _, k := range keywords {
+		if strings.Contains(lower, k) {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return ""
+	}
+	for _, a := range agents {
+		if a.ID == AgentPaperSearch {
 			return a.ID
 		}
 	}

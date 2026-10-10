@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x61gent/v1/execute.proto\x12\x08\x61gent.v1\"s\n\x0e\x45xecuteRequest\x12\x10\n\x08trace_id\x18\x01 \x01(\t\x12\x17\n\x0f\x63onversation_id\x18\x02 \x01(\t\x12\x0e\n\x06run_id\x18\x03 \x01(\t\x12\x10\n\x08\x61gent_id\x18\x04 \x01(\t\x12\x14\n\x0cuser_message\x18\x05 \x01(\t\"u\n\x0c\x45xecuteEvent\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\r\n\x05\x64\x65lta\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12\x11\n\ttool_name\x18\x04 \x01(\t\x12\x13\n\x0btool_detail\x18\x05 \x01(\t\x12\x0f\n\x07message\x18\x06 \x01(\t\"\x1f\n\rCancelRequest\x12\x0e\n\x06run_id\x18\x01 \x01(\t\"-\n\x0e\x43\x61ncelResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x0f\n\rHealthRequest\"2\n\x0eHealthResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x10\n\x08\x61gent_id\x18\x02 \x01(\t2\xcd\x01\n\x12\x41gentWorkerService\x12=\n\x07\x45xecute\x12\x18.agent.v1.ExecuteRequest\x1a\x16.agent.v1.ExecuteEvent0\x01\x12;\n\x06\x43\x61ncel\x12\x17.agent.v1.CancelRequest\x1a\x18.agent.v1.CancelResponse\x12;\n\x06Health\x12\x17.agent.v1.HealthRequest\x1a\x18.agent.v1.HealthResponseB-Z+piper_agent/gateway/pkg/pb/agent/v1;agentv1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x61gent/v1/execute.proto\x12\x08\x61gent.v1\"E\n\x10UploadedDocument\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x11\n\tmime_type\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"\xa2\x01\n\x0e\x45xecuteRequest\x12\x10\n\x08trace_id\x18\x01 \x01(\t\x12\x17\n\x0f\x63onversation_id\x18\x02 \x01(\t\x12\x0e\n\x06run_id\x18\x03 \x01(\t\x12\x10\n\x08\x61gent_id\x18\x04 \x01(\t\x12\x14\n\x0cuser_message\x18\x05 \x01(\t\x12-\n\tdocuments\x18\x06 \x03(\x0b\x32\x1a.agent.v1.UploadedDocument\"u\n\x0c\x45xecuteEvent\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\r\n\x05\x64\x65lta\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12\x11\n\ttool_name\x18\x04 \x01(\t\x12\x13\n\x0btool_detail\x18\x05 \x01(\t\x12\x0f\n\x07message\x18\x06 \x01(\t\"\x1f\n\rCancelRequest\x12\x0e\n\x06run_id\x18\x01 \x01(\t\"-\n\x0e\x43\x61ncelResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x0f\n\rHealthRequest\"2\n\x0eHealthResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x10\n\x08\x61gent_id\x18\x02 \x01(\t2\xcd\x01\n\x12\x41gentWorkerService\x12=\n\x07\x45xecute\x12\x18.agent.v1.ExecuteRequest\x1a\x16.agent.v1.ExecuteEvent0\x01\x12;\n\x06\x43\x61ncel\x12\x17.agent.v1.CancelRequest\x1a\x18.agent.v1.CancelResponse\x12;\n\x06Health\x12\x17.agent.v1.HealthRequest\x1a\x18.agent.v1.HealthResponseB-Z+piper_agent/gateway/pkg/pb/agent/v1;agentv1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,18 +32,20 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'agent.v1.execute_pb2', _glo
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z+piper_agent/gateway/pkg/pb/agent/v1;agentv1'
-  _globals['_EXECUTEREQUEST']._serialized_start=36
-  _globals['_EXECUTEREQUEST']._serialized_end=151
-  _globals['_EXECUTEEVENT']._serialized_start=153
-  _globals['_EXECUTEEVENT']._serialized_end=270
-  _globals['_CANCELREQUEST']._serialized_start=272
-  _globals['_CANCELREQUEST']._serialized_end=303
-  _globals['_CANCELRESPONSE']._serialized_start=305
-  _globals['_CANCELRESPONSE']._serialized_end=350
-  _globals['_HEALTHREQUEST']._serialized_start=352
-  _globals['_HEALTHREQUEST']._serialized_end=367
-  _globals['_HEALTHRESPONSE']._serialized_start=369
-  _globals['_HEALTHRESPONSE']._serialized_end=419
-  _globals['_AGENTWORKERSERVICE']._serialized_start=422
-  _globals['_AGENTWORKERSERVICE']._serialized_end=627
+  _globals['_UPLOADEDDOCUMENT']._serialized_start=36
+  _globals['_UPLOADEDDOCUMENT']._serialized_end=105
+  _globals['_EXECUTEREQUEST']._serialized_start=108
+  _globals['_EXECUTEREQUEST']._serialized_end=270
+  _globals['_EXECUTEEVENT']._serialized_start=272
+  _globals['_EXECUTEEVENT']._serialized_end=389
+  _globals['_CANCELREQUEST']._serialized_start=391
+  _globals['_CANCELREQUEST']._serialized_end=422
+  _globals['_CANCELRESPONSE']._serialized_start=424
+  _globals['_CANCELRESPONSE']._serialized_end=469
+  _globals['_HEALTHREQUEST']._serialized_start=471
+  _globals['_HEALTHREQUEST']._serialized_end=486
+  _globals['_HEALTHRESPONSE']._serialized_start=488
+  _globals['_HEALTHRESPONSE']._serialized_end=538
+  _globals['_AGENTWORKERSERVICE']._serialized_start=541
+  _globals['_AGENTWORKERSERVICE']._serialized_end=746
 # @@protoc_insertion_point(module_scope)

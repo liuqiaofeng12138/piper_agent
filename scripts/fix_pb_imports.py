@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 TARGETS = [
     (ROOT / "web_crawler_agent" / "src" / "web_crawler_agent" / "pb", "web_crawler_agent"),
     (ROOT / "general_agent" / "src" / "piper_agent" / "pb", "piper_agent"),
+    (ROOT / "rag_agent" / "src" / "rag_agent" / "pb", "rag_agent"),
+    (ROOT / "paper_agent" / "src" / "paper_agent" / "pb", "paper_agent"),
 ]
 
 IMPORT_RE = [

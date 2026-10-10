@@ -19,6 +19,8 @@
 | [runtime/](runtime/) | Go | Agent Runtime gRPC Server，内嵌调用 `engine` |
 | [web_crawler_agent/](web_crawler_agent/) | Python | Web 采集子 Agent：LLM Harness、工具链、`web_crawler` Worker |
 | [general_agent/](general_agent/) | Python | 平台通用子 Agent Workers（`general_chat` 等，包名 `piper_agent`） |
+| [rag_agent/](rag_agent/) | Python | 文档 RAG 子 Agent（`doc_rag`，LangGraph） |
+| [paper_agent/](paper_agent/) | Python | 学术论文检索子 Agent（`paper_search`，arXiv + LangGraph） |
 | [gateway/](gateway/) | Go | Web API 网关（SSE 对话、会话，Phase W1+） |
 | [web/](web/) | Vue + TS | 对话前端 |
 | [shared/](shared/) | 中性 | JSON Schema、示例模版、Prompt 片段 |
@@ -34,7 +36,13 @@
 
 ## Web 对话（推荐一键后端）
 
-**一条命令拉起 Runtime + Agent Worker + 网关**（需已 `uv pip install -e web_crawler_agent/[llm]` 或存在 `web_crawler_agent/.venv` / `general_agent/.venv`）：
+**先为各 Python 子 Agent 创建独立虚拟环境**（每个含 `pyproject.toml` 的项目一个 `.venv`）：
+
+```powershell
+powershell -File scripts/setup-python-venvs.ps1
+```
+
+**一条命令拉起 Runtime + Agent Worker + 网关**：
 
 ```powershell
 cd gateway
