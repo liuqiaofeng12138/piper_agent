@@ -85,7 +85,9 @@ function onSuggestion(text: string) {
           <img src="/favicon.svg" alt="" width="48" height="48" />
         </div>
         <h2>我是 Piper Agent，有什么可以帮您？</h2>
-        <p class="sub">可描述采集需求，或上传 PDF/Word 进行文档问答（上传后自动走文档 Agent）。</p>
+        <p class="sub">
+          可描述采集需求；上传 PDF/Word 可文档问答；上传文件并说明「生成 PPT」可自动走文档转 PPT Agent 并下载演示文稿。
+        </p>
         <div class="chips">
           <button
             v-for="s in suggestions"

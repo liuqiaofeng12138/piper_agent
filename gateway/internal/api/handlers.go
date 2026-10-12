@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -25,11 +26,12 @@ import (
 )
 
 type Deps struct {
-	Store   session.Store
-	Config  *config.Config
-	Router  *router.Engine
-	Workers *agentclient.Pool
-	Runs    *run.Registry
+	Store        session.Store
+	Config       *config.Config
+	Router       *router.Engine
+	Workers      *agentclient.Pool
+	Runs         *run.Registry
+	ArtifactsDir string
 }
 
 type Server struct {
@@ -58,6 +60,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /api/v1/conversations/{id}", s.deleteConversation)
 	mux.HandleFunc("POST /api/v1/chat/completions", s.chatCompletions)
 	mux.HandleFunc("POST /api/v1/runs/{id}/cancel", s.cancelRun)
+	mux.HandleFunc("GET /api/v1/artifacts/{id}", s.downloadArtifact)
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
@@ -298,6 +301,19 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		}
 		if ev.Message != "" {
 			payload["message"] = ev.Message
+		}
+		if ev.Type == "artifact.ready" && ev.ToolDetail != "" {
+			fn := ev.Message
+			if fn == "" {
+				fn = "presentation.pptx"
+			}
+			payload["artifact_id"] = ev.ToolDetail
+			payload["artifact_filename"] = fn
+			payload["download_url"] = fmt.Sprintf(
+				"/api/v1/artifacts/%s?filename=%s",
+				ev.ToolDetail,
+				url.QueryEscape(fn),
+			)
 		}
 		send(payload)
 		if ev.Type == "message.done" && ev.Content != "" {

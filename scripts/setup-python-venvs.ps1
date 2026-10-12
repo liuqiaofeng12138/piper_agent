@@ -8,6 +8,47 @@ $ExtrasByDir = @{
     "general_agent"     = "llm"
     "rag_agent"         = "dev"
     "paper_agent"       = "dev"
+    "word2ppt_agent"    = "dev"
+}
+
+# 国内 PyPI 镜像（默认清华）。覆盖方式：
+#   $env:PIPER_PIP_INDEX = "https://mirrors.aliyun.com/pypi/simple/"
+#   $env:PIPER_PIP_TRUSTED_HOST = "mirrors.aliyun.com"
+# 使用官方源：$env:PIPER_PIP_NO_MIRROR = "1"
+$DefaultPipIndex = "https://pypi.tuna.tsinghua.edu.cn/simple"
+$DefaultPipTrustedHost = "pypi.tuna.tsinghua.edu.cn"
+
+function Get-PipMirrorArgs {
+    if ($env:PIPER_PIP_NO_MIRROR -eq "1") {
+        return @()
+    }
+    $index = $env:PIPER_PIP_INDEX
+    if (-not $index -and $env:PIP_INDEX_URL) {
+        $index = $env:PIP_INDEX_URL
+    }
+    if (-not $index) {
+        $index = $DefaultPipIndex
+    }
+    $trusted = $env:PIPER_PIP_TRUSTED_HOST
+    if (-not $trusted) {
+        try {
+            $trusted = ([Uri]$index).Host
+        } catch {
+            $trusted = $DefaultPipTrustedHost
+        }
+    }
+    return @("-i", $index, "--trusted-host", $trusted)
+}
+
+function Get-PipMirrorDisplay {
+    if ($env:PIPER_PIP_NO_MIRROR -eq "1") {
+        return "pypi.org（官方，PIPER_PIP_NO_MIRROR=1）"
+    }
+    $args = Get-PipMirrorArgs
+    if ($args.Count -ge 2) {
+        return $args[1]
+    }
+    return $DefaultPipIndex
 }
 
 function Get-PythonVersionTag([string]$exe) {
@@ -163,19 +204,33 @@ if (-not $projects) {
     exit 1
 }
 
+$pipMirror = Get-PipMirrorArgs
+Write-Host "pip 镜像: $(Get-PipMirrorDisplay)"
+
 foreach ($proj in $projects) {
     $name = $proj.Name
     $venv = Join-Path $proj.FullName ".venv"
     Write-Host "==> $name"
+    if (-not (Test-Path $venv)) {
+        Write-Host "  正在创建 .venv（首次可能需 10–30 秒，请稍候）..."
+    } else {
+        Write-Host "  校验 .venv ..."
+    }
     [string]$venvPy = Ensure-Venv $py $venv
     $extras = $ExtrasByDir[$name]
     Push-Location $proj.FullName
-    & $venvPy -m pip install -U pip wheel
+    Write-Host "  升级 pip / wheel ..."
+    & $venvPy -m pip install @pipMirror -U pip wheel
     if ($LASTEXITCODE -ne 0) { throw "pip 升级失败: $name" }
-    if ($extras) {
-        & $venvPy -m pip install -e ".[$extras]"
+    if ($name -eq "word2ppt_agent") {
+        Write-Host "  安装项目依赖（含 markitdown/onnxruntime 等，首次约 2–5 分钟，下方会有 pip 输出）..."
     } else {
-        & $venvPy -m pip install -e "."
+        Write-Host "  安装项目依赖 ..."
+    }
+    if ($extras) {
+        & $venvPy -m pip install @pipMirror -e ".[$extras]"
+    } else {
+        & $venvPy -m pip install @pipMirror -e "."
     }
     if ($LASTEXITCODE -ne 0) { throw "依赖安装失败: $name" }
     if (-not (Test-VenvWorkerDeps $venvPy)) {

@@ -6,6 +6,11 @@ export interface MessageStep {
   text: string
 }
 
+export interface MessageDownload {
+  filename: string
+  url: string
+}
+
 export interface Message {
   id: string
   role: MessageRole
@@ -14,6 +19,7 @@ export interface Message {
   streaming?: boolean
   steps?: MessageStep[]
   agent_id?: string
+  downloads?: MessageDownload[]
 }
 
 export interface Conversation {
@@ -46,6 +52,7 @@ export type StreamEventType =
   | 'tool.call'
   | 'run.progress'
   | 'run.cancelled'
+  | 'artifact.ready'
   | 'error'
 
 export interface StreamEvent {
@@ -59,4 +66,7 @@ export interface StreamEvent {
   message?: string
   tool_name?: string
   tool_detail?: string
+  download_url?: string
+  artifact_filename?: string
+  artifact_id?: string
 }

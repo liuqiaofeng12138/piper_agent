@@ -97,6 +97,22 @@ agents:
     listen: "127.0.0.1:15064"
     enabled: true
     module: paper_agent.workers.paper_search
+  - id: word2ppt
+    display_name: "文档转 PPT"
+    description: "上传 Word/PDF/Excel 等文件，自动生成汇总展示用演示文稿并可下载"
+    listen: "127.0.0.1:15065"
+    enabled: true
+    module: word2ppt_agent.workers.word2ppt
+
+# Worker 生成的 PPT 与网关下载接口共用目录（相对本 yaml 所在目录）
+artifacts:
+  dir: "../../data/artifacts"
+
+# 文档转 PPT（word2ppt Agent，可选）
+word2ppt:
+  max_slides_per_doc: 24
+  max_bullets_per_slide: 6
+  max_chars_per_bullet: 220
 
 # 文档 RAG（可选，未配置时使用内置默认值）
 rag:

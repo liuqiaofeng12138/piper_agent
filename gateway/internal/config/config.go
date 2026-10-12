@@ -18,6 +18,7 @@ type Config struct {
 	MaxRequestBodyBytes int64            `yaml:"max_request_body_bytes"`
 	MaxUploadBodyBytes  int64            `yaml:"max_upload_body_bytes"`
 	RateLimitPerMinute  int              `yaml:"rate_limit_per_minute"`
+	ArtifactsDir        string           `yaml:"-"`
 	RuntimeAddress      string           `yaml:"-"`
 	LLM                 LLMConfig        `yaml:"-"`
 	Agents              []AgentSpec      `yaml:"agents"`
@@ -222,6 +223,19 @@ func Load(path string) (*Config, error) {
 		if len(agents) > 0 {
 			cfg.Agents = agents
 		}
+	}
+	if art, _ := doc["artifacts"].(map[string]any); art != nil {
+		if v, ok := art["dir"].(string); ok && v != "" {
+			cfg.ArtifactsDir = v
+		}
+	}
+	if w2p, _ := doc["word2ppt"].(map[string]any); w2p != nil {
+		if v, ok := w2p["artifacts_dir"].(string); ok && v != "" && cfg.ArtifactsDir == "" {
+			cfg.ArtifactsDir = v
+		}
+	}
+	if cfg.ArtifactsDir == "" {
+		cfg.ArtifactsDir = "../../data/artifacts"
 	}
 	return cfg, nil
 }

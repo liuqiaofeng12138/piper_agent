@@ -56,6 +56,17 @@ const agentNames = computed(() => {
                 <pre class="step-body">{{ step.text }}</pre>
               </details>
             </div>
+            <div v-if="msg.downloads?.length" class="downloads">
+              <a
+                v-for="(dl, dIdx) in msg.downloads"
+                :key="dIdx"
+                class="download-btn"
+                :href="dl.url"
+                download
+              >
+                下载 {{ dl.filename }}
+              </a>
+            </div>
             <div
               v-if="msg.content"
               class="md-body"
@@ -80,6 +91,25 @@ const agentNames = computed(() => {
   text-align: center;
   color: var(--ds-text-muted);
   padding: 48px;
+}
+.downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--ds-accent, #2563eb);
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+}
+.download-btn:hover {
+  filter: brightness(1.05);
 }
 .row {
   display: flex;

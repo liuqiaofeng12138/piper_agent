@@ -17,7 +17,10 @@ const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const acceptTypes =
-  '.pdf,.doc,.docx,.docm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  '.pdf,.doc,.docx,.docm,.xls,.xlsx,.xlsm,.csv,.txt,.md,.ppt,.pptx,' +
+  'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
+  'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' +
+  'application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv'
 
 function autoResize() {
   const el = textareaRef.value

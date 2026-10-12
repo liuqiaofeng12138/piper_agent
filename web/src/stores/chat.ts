@@ -172,6 +172,14 @@ export const useChatStore = defineStore('chat', () => {
           },
         ]
       }
+      if (ev.type === 'artifact.ready' && ev.download_url) {
+        const downloads = [...(next.downloads ?? [])]
+        downloads.push({
+          url: ev.download_url,
+          filename: ev.artifact_filename || ev.message || 'presentation.pptx',
+        })
+        next.downloads = downloads
+      }
       if (ev.type === 'run.cancelled') {
         next.content = `${next.content || ''}\n\n[已停止生成]`
       }

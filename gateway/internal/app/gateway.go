@@ -6,6 +6,7 @@ import (
 
 	"piper_agent/gateway/internal/agentclient"
 	"piper_agent/gateway/internal/api"
+	"piper_agent/gateway/internal/artifacts"
 	"piper_agent/gateway/internal/config"
 	"piper_agent/gateway/internal/router"
 	"piper_agent/gateway/internal/run"
@@ -35,12 +36,17 @@ func StartHTTP(cfg *config.Config, listenOverride string) error {
 
 	pool := agentclient.NewPool(cfg.Agents)
 	defer pool.Close()
+	artifactsDir, err := artifacts.ResolveDir(cfg.ConfigPath, cfg.ArtifactsDir)
+	if err != nil {
+		return err
+	}
 	deps := &api.Deps{
-		Store:   store,
-		Config:  cfg,
-		Router:  router.New(cfg),
-		Workers: pool,
-		Runs:    run.NewRegistry(),
+		Store:        store,
+		Config:       cfg,
+		Router:       router.New(cfg),
+		Workers:      pool,
+		Runs:         run.NewRegistry(),
+		ArtifactsDir: artifactsDir,
 	}
 	handler := api.NewHandler(deps, bearerToken(cfg))
 

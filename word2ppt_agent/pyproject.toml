@@ -1,0 +1,25 @@
+[project]
+name = "word2ppt-agent"
+version = "0.1.0"
+description = "文档转 PPT 子 Agent：上传 Word/PDF/Excel 等并生成汇总演示文稿"
+requires-python = ">=3.11"
+dependencies = [
+    "grpcio>=1.60",
+    "protobuf>=4.25",
+    "pyyaml>=6.0",
+    "markitdown[pdf,docx,xlsx]>=0.0.1",
+    "python-pptx>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+word2ppt-agent = "word2ppt_agent.workers.word2ppt:_cli"

@@ -16,6 +16,7 @@ func testConfig() *config.Config {
 			{ID: "general_chat", DisplayName: "通用对话", Address: "127.0.0.1:15062", Enabled: true, Default: true},
 			{ID: "doc_rag", DisplayName: "文档问答", Address: "127.0.0.1:15063", Enabled: true},
 			{ID: "paper_search", DisplayName: "论文检索", Address: "127.0.0.1:15064", Enabled: true},
+			{ID: "word2ppt", DisplayName: "文档转PPT", Address: "127.0.0.1:15065", Enabled: true},
 		},
 	}
 }
@@ -57,6 +58,17 @@ func TestUploadSkipsIntentToDocRAG(t *testing.T) {
 		t.Fatalf("agent = %s, want doc_rag", id)
 	}
 	if !strings.Contains(reason, "upload") {
+		t.Fatalf("reason = %q", reason)
+	}
+}
+
+func TestUploadWithPPTKeywordsRoutesWord2PPT(t *testing.T) {
+	e := New(testConfig())
+	id, reason := e.ClassifyWithAttachments(context.Background(), "请把附件生成ppt", 1)
+	if id != "word2ppt" {
+		t.Fatalf("agent = %s, want word2ppt", id)
+	}
+	if !strings.Contains(reason, "word2ppt") {
 		t.Fatalf("reason = %q", reason)
 	}
 }

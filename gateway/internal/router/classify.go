@@ -40,12 +40,20 @@ func (e *Engine) Classify(ctx context.Context, userMessage string) (string, stri
 	return e.ClassifyWithAttachments(ctx, userMessage, 0)
 }
 
-// ClassifyWithAttachments 若附带文档则跳过意图识别，直达 doc_rag。
+// ClassifyWithAttachments 若附带文档则跳过意图识别：PPT 意图直达 word2ppt，否则 doc_rag。
 func (e *Engine) ClassifyWithAttachments(ctx context.Context, userMessage string, documentCount int) (string, string) {
 	if documentCount > 0 {
+		if id := matchWord2PPTKeywords(userMessage, e.agents); id != "" {
+			return id, "upload: 附带文档且命中 PPT 转制关键词，直达 word2ppt Agent"
+		}
 		for _, a := range e.agents {
 			if a.ID == AgentDocRAG {
 				return AgentDocRAG, "upload: 附带文档，直达文档问答 Agent"
+			}
+		}
+		for _, a := range e.agents {
+			if a.ID == AgentWord2PPT {
+				return AgentWord2PPT, "upload: 附带文档，直达 word2ppt Agent"
 			}
 		}
 	}
@@ -64,6 +72,9 @@ func (e *Engine) classifyByRule(msg string) (string, string) {
 	}
 	if id := matchPaperSearchKeywords(msg, e.agents); id != "" {
 		return id, "rule: 命中论文检索关键词"
+	}
+	if id := matchWord2PPTKeywords(msg, e.agents); id != "" {
+		return id, "rule: 命中 PPT 转制关键词"
 	}
 	if e.defaultID != "" {
 		return e.defaultID, "rule: 默认路由"
@@ -115,6 +126,32 @@ func matchPaperSearchKeywords(msg string, agents []config.AgentSpec) string {
 	}
 	for _, a := range agents {
 		if a.ID == AgentPaperSearch {
+			return a.ID
+		}
+	}
+	return ""
+}
+
+// matchWord2PPTKeywords 命中演示文稿/PPT 类关键词时返回 word2ppt Agent。
+func matchWord2PPTKeywords(msg string, agents []config.AgentSpec) string {
+	lower := strings.ToLower(msg)
+	keywords := []string{
+		"ppt", "pptx", "powerpoint", "幻灯片", "演示文稿", "汇报材料",
+		"转ppt", "生成ppt", "做成ppt", "转成ppt", "制作ppt", "导出ppt",
+		"word2ppt", "文档转", "转成幻灯片",
+	}
+	matched := false
+	for _, k := range keywords {
+		if strings.Contains(lower, k) {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return ""
+	}
+	for _, a := range agents {
+		if a.ID == AgentWord2PPT {
 			return a.ID
 		}
 	}
