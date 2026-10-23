@@ -13,7 +13,13 @@ import grpc
 
 from word2ppt_agent.config.loader import load_agent_config, resolve_artifacts_dir, worker_listen_address
 from word2ppt_agent.ingest.extract import extract_text, supported_filename
-from word2ppt_agent.ppt.builder import build_presentation, default_ppt_title
+from word2ppt_agent.llm_errors import format_llm_error, is_expected_llm_client_error
+from word2ppt_agent.ppt.builder import (
+    build_from_outline,
+    build_presentation,
+    default_ppt_title,
+)
+from word2ppt_agent.ppt.planner import plan_deck_outline
 from word2ppt_agent.pb.agent.v1 import execute_pb2, execute_pb2_grpc
 
 logger = logging.getLogger(__name__)
@@ -56,6 +62,44 @@ class Word2PPTServicer(execute_pb2_grpc.AgentWorkerServiceServicer):
         self._cfg = load_agent_config(config_path)
         self._artifacts_dir = resolve_artifacts_dir(self._cfg)
         self._cancels = _RunCancels()
+        self._llm = None
+        self._model = self._cfg.llm.model
+        if self._cfg.word2ppt.use_llm:
+            if not self._cfg.llm.api_key:
+                hint = self._cfg.config_path or "deploy/config/local.yaml"
+                raise RuntimeError(f"word2ppt 已启用大模型规划，请配置 llm.api_key: {hint}")
+            try:
+                from openai import OpenAI
+            except ImportError as e:
+                raise RuntimeError("请安装 openai: pip install openai") from e
+            kwargs: dict = {"api_key": self._cfg.llm.api_key}
+            if self._cfg.llm.base_url:
+                kwargs["base_url"] = self._cfg.llm.base_url
+            self._llm = OpenAI(**kwargs)
+
+    def _build_ppt(
+        self,
+        parsed: list[tuple[str, str]],
+        user_message: str,
+        title: str,
+        out_path: Path,
+    ):
+        w2p = self._cfg.word2ppt
+        if w2p.use_llm and self._llm is not None:
+            outline = plan_deck_outline(
+                self._llm,
+                self._model,
+                user_message,
+                parsed,
+                w2p,
+            )
+            deck_title = outline.deck_title or title
+            return build_from_outline(outline, out_path), deck_title, True
+        return (
+            build_presentation(parsed, title=title, output_path=out_path, cfg=w2p),
+            title,
+            False,
+        )
 
     def Execute(self, request: execute_pb2.ExecuteRequest, context: grpc.ServicerContext):
         run_id = request.run_id or "run-unknown"
@@ -111,24 +155,53 @@ class Word2PPTServicer(execute_pb2_grpc.AgentWorkerServiceServicer):
             download_name = _safe_download_name(f"{title}.pptx")
             out_path = self._artifacts_dir / f"{artifact_id}.pptx"
 
+            if self._cfg.word2ppt.use_llm:
+                yield execute_pb2.ExecuteEvent(
+                    type="run.progress",
+                    tool_name="llm",
+                    message="大模型正在规划章节结构与版式主题…",
+                )
+
             yield execute_pb2.ExecuteEvent(
                 type="run.progress",
                 tool_name="ppt",
-                message="正在生成演示文稿…",
+                message="正在渲染演示文稿…",
             )
 
-            result = build_presentation(
-                parsed,
-                title=title,
-                output_path=out_path,
-                cfg=self._cfg.word2ppt,
-            )
+            try:
+                result, deck_title, used_llm = self._build_ppt(
+                    parsed,
+                    request.user_message,
+                    title,
+                    out_path,
+                )
+            except Exception as e:  # noqa: BLE001
+                if is_expected_llm_client_error(e):
+                    raise
+                if self._cfg.word2ppt.fallback_rule_layout and self._cfg.word2ppt.use_llm:
+                    logger.warning("LLM outline failed, fallback to rule layout: %s", e)
+                    yield execute_pb2.ExecuteEvent(
+                        type="run.progress",
+                        tool_name="ppt",
+                        message="大模型大纲生成失败，已回退为规则排版…",
+                    )
+                    result = build_presentation(
+                        parsed,
+                        title=title,
+                        output_path=out_path,
+                        cfg=self._cfg.word2ppt,
+                    )
+                    deck_title = title
+                    used_llm = False
+                else:
+                    raise
 
             if cancelled():
                 out_path.unlink(missing_ok=True)
                 yield execute_pb2.ExecuteEvent(type="run.cancelled", message="已取消")
                 return
 
+            download_name = _safe_download_name(f"{deck_title}.pptx")
             yield execute_pb2.ExecuteEvent(
                 type="artifact.ready",
                 tool_name="ppt",
@@ -137,14 +210,19 @@ class Word2PPTServicer(execute_pb2_grpc.AgentWorkerServiceServicer):
             )
 
             download_link = f"/api/v1/artifacts/{artifact_id}?filename={download_name}"
+            mode = "大模型结构化排版" if used_llm else "规则排版"
             summary = (
-                f"已根据上传的 **{len(parsed)}** 个文件生成汇总 PPT（约 **{result.slide_count}** 页）。\n\n"
+                f"已根据 **{len(parsed)}** 个文件生成演示文稿（**{result.slide_count}** 页，{mode}）。\n\n"
                 f"[下载 {download_name}]({download_link})"
             )
             yield execute_pb2.ExecuteEvent(type="message.done", content=summary)
         except Exception as e:  # noqa: BLE001
-            logger.exception("Execute failed run_id=%s", run_id)
-            yield execute_pb2.ExecuteEvent(type="error", message=str(e))
+            msg = format_llm_error(e)
+            if is_expected_llm_client_error(e):
+                logger.warning("Execute LLM error run_id=%s: %s", run_id, msg)
+            else:
+                logger.exception("Execute failed run_id=%s", run_id)
+            yield execute_pb2.ExecuteEvent(type="error", message=msg)
         finally:
             self._cancels.remove(run_id)
             logger.info("execute end run=%s", run_id)

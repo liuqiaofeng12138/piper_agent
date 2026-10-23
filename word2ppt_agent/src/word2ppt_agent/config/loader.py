@@ -8,15 +8,28 @@ import yaml
 
 
 @dataclass
+class LLMConfig:
+    provider: str = "openai"
+    model: str = "gpt-4o"
+    base_url: str | None = None
+    api_key: str = ""
+
+
+@dataclass
 class Word2PPTConfig:
     artifacts_dir: str = "../../data/artifacts"
     max_slides_per_doc: int = 24
     max_bullets_per_slide: int = 6
     max_chars_per_bullet: int = 220
+    use_llm: bool = True
+    max_slides_total: int = 20
+    max_source_chars: int = 28000
+    fallback_rule_layout: bool = True
 
 
 @dataclass
 class AgentConfig:
+    llm: LLMConfig = field(default_factory=LLMConfig)
     word2ppt: Word2PPTConfig = field(default_factory=Word2PPTConfig)
     config_path: Path | None = None
 
@@ -47,6 +60,14 @@ def resolve_artifacts_dir(cfg: AgentConfig) -> Path:
 
 
 def _apply_raw(cfg: AgentConfig, raw: dict[str, Any], config_file: Path) -> None:
+    llm = raw.get("llm") or {}
+    base = llm.get("base_url")
+    cfg.llm = LLMConfig(
+        provider=str(llm.get("provider", cfg.llm.provider)),
+        model=str(llm.get("model", cfg.llm.model)),
+        base_url=str(base).strip() if base else None,
+        api_key=str(llm.get("api_key") or "").strip(),
+    )
     w2p = raw.get("word2ppt") or {}
     artifacts = raw.get("artifacts") or {}
     art_dir = w2p.get("artifacts_dir") or artifacts.get("dir")
@@ -58,6 +79,12 @@ def _apply_raw(cfg: AgentConfig, raw: dict[str, Any], config_file: Path) -> None
         ),
         max_chars_per_bullet=int(
             w2p.get("max_chars_per_bullet", cfg.word2ppt.max_chars_per_bullet)
+        ),
+        use_llm=bool(w2p.get("use_llm", cfg.word2ppt.use_llm)),
+        max_slides_total=int(w2p.get("max_slides_total", cfg.word2ppt.max_slides_total)),
+        max_source_chars=int(w2p.get("max_source_chars", cfg.word2ppt.max_source_chars)),
+        fallback_rule_layout=bool(
+            w2p.get("fallback_rule_layout", cfg.word2ppt.fallback_rule_layout)
         ),
     )
     _ = config_file

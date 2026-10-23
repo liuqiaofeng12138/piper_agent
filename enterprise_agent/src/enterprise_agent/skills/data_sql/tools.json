@@ -1,0 +1,32 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "get_schema_metadata",
+      "description": "获取演示库表结构与字段说明",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "run_sql_query",
+      "description": "执行只读 SELECT 查询，返回 TSV 结果",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "单条 SELECT 语句"
+          }
+        },
+        "required": ["query"],
+        "additionalProperties": false
+      }
+    }
+  }
+]

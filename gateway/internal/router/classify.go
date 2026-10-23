@@ -73,6 +73,9 @@ func (e *Engine) classifyByRule(msg string) (string, string) {
 	if id := matchPaperSearchKeywords(msg, e.agents); id != "" {
 		return id, "rule: 命中论文检索关键词"
 	}
+	if id := matchEnterpriseOpsKeywords(msg, e.agents); id != "" {
+		return id, "rule: 命中企业运营/BI 关键词"
+	}
 	if id := matchWord2PPTKeywords(msg, e.agents); id != "" {
 		return id, "rule: 命中 PPT 转制关键词"
 	}
@@ -152,6 +155,32 @@ func matchWord2PPTKeywords(msg string, agents []config.AgentSpec) string {
 	}
 	for _, a := range agents {
 		if a.ID == AgentWord2PPT {
+			return a.ID
+		}
+	}
+	return ""
+}
+
+// matchEnterpriseOpsKeywords 命中企业运营、BI、竞品与经营分析类关键词时返回 enterprise_ops Agent。
+func matchEnterpriseOpsKeywords(msg string, agents []config.AgentSpec) string {
+	lower := strings.ToLower(msg)
+	keywords := []string{
+		"企业运营", "经营分析", "竞品", "定价策略", "销售额", "华东", "华北", "华南",
+		"bi", "商业智能", "roi", "现金流", "财务比率", "市场调研", "行业动态",
+		"数据库查询", "sql", "综合分析报告",
+	}
+	matched := false
+	for _, k := range keywords {
+		if strings.Contains(lower, k) || strings.Contains(msg, k) {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return ""
+	}
+	for _, a := range agents {
+		if a.ID == AgentEnterpriseOps {
 			return a.ID
 		}
 	}

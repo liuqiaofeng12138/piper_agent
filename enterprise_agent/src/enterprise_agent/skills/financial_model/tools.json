@@ -1,0 +1,36 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "read_excel_pandas",
+      "description": "预览 Excel/表格文件",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "sheet_name": { "type": "string" }
+        },
+        "required": ["filename"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "python_code_interpreter",
+      "description": "执行 pandas 分析代码，禁止 import",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Python 代码，可用 pd 与 frames"
+          }
+        },
+        "required": ["code"],
+        "additionalProperties": false
+      }
+    }
+  }
+]

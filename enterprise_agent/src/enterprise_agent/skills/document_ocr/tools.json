@@ -1,0 +1,35 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "paddleocr_vl_parse",
+      "description": "将上传文档转为 Markdown 文本",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "与上传列表一致的文件名"
+          }
+        },
+        "required": ["filename"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "extract_layout_table",
+      "description": "从 Markdown 文本中抽取表格",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "markdown_text": { "type": "string" }
+        },
+        "required": ["markdown_text"],
+        "additionalProperties": false
+      }
+    }
+  }
+]

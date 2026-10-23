@@ -9,6 +9,7 @@ $ExtrasByDir = @{
     "rag_agent"         = "dev"
     "paper_agent"       = "dev"
     "word2ppt_agent"    = "dev"
+    "enterprise_agent"  = "dev"
 }
 
 # 国内 PyPI 镜像（默认清华）。覆盖方式：
@@ -140,6 +141,65 @@ $($_.Exception.Message)
     }
 }
 
+function Get-VenvPipMajor([string]$venvPy) {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    $line = (& $venvPy -m pip --version 2>$null | Select-Object -Last 1)
+    $ErrorActionPreference = $prev
+    if ("$line" -match "pip (\d+)") {
+        return [int]$Matches[1]
+    }
+    return 0
+}
+
+function Get-OfficialPipIndexArgs() {
+    return @("-i", "https://pypi.org/simple", "--trusted-host", "pypi.org")
+}
+
+function Invoke-PipWithFallback(
+    [string]$venvPy,
+    [string[]]$pipMirror,
+    [string[]]$pipArgs,
+    [switch]$NoBuildIsolation
+) {
+    $buildArgs = @()
+    if ($NoBuildIsolation) {
+        $buildArgs = @("--no-build-isolation")
+    }
+    if ($pipMirror -and $pipMirror.Count -gt 0) {
+        & $venvPy -m pip install @pipMirror @pipArgs @buildArgs
+        if ($LASTEXITCODE -eq 0) {
+            return $true
+        }
+        Write-Warning "  镜像源 pip install 失败，尝试官方 PyPI ..."
+    }
+    & $venvPy -m pip install @(Get-OfficialPipIndexArgs) @pipArgs @buildArgs
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Upgrade-VenvPip([string]$venvPy, [string[]]$pipMirror) {
+    Write-Host "  升级 pip ..."
+    if (-not (Invoke-PipWithFallback $venvPy $pipMirror @("-U", "pip"))) {
+        return $false
+    }
+    if ((Get-VenvPipMajor $venvPy) -lt 24) {
+        Write-Warning "  pip 版本仍较旧，从官方 PyPI 强制升级 ..."
+        & $venvPy -m pip install @(Get-OfficialPipIndexArgs) -U pip
+        if ($LASTEXITCODE -ne 0) {
+            return $false
+        }
+    }
+    Write-Host "  安装构建依赖 setuptools>=68 ..."
+    if (-not (Invoke-PipWithFallback $venvPy $pipMirror @("-U", "setuptools>=68"))) {
+        return $false
+    }
+    Write-Host "  安装/升级 wheel（可选）..."
+    if (-not (Invoke-PipWithFallback $venvPy $pipMirror @("-U", "wheel"))) {
+        Write-Warning "  未安装 wheel（一般不影响 pip install -e，可忽略）"
+    }
+    return $true
+}
+
 function Ensure-Venv([string]$basePy, [string]$venvDir) {
     $baseVer = Get-PythonVersionTag $basePy
     $venvPy = Get-VenvPython $venvDir
@@ -219,20 +279,20 @@ foreach ($proj in $projects) {
     [string]$venvPy = Ensure-Venv $py $venv
     $extras = $ExtrasByDir[$name]
     Push-Location $proj.FullName
-    Write-Host "  升级 pip / wheel ..."
-    & $venvPy -m pip install @pipMirror -U pip wheel
-    if ($LASTEXITCODE -ne 0) { throw "pip 升级失败: $name" }
+    if (-not (Upgrade-VenvPip $venvPy $pipMirror)) {
+        throw "pip 升级失败: $name"
+    }
     if ($name -eq "word2ppt_agent") {
         Write-Host "  安装项目依赖（含 markitdown/onnxruntime 等，首次约 2–5 分钟，下方会有 pip 输出）..."
     } else {
         Write-Host "  安装项目依赖 ..."
     }
     if ($extras) {
-        & $venvPy -m pip install @pipMirror -e ".[$extras]"
+        $depsOk = Invoke-PipWithFallback $venvPy $pipMirror @("-e", ".[$extras]") -NoBuildIsolation
     } else {
-        & $venvPy -m pip install @pipMirror -e "."
+        $depsOk = Invoke-PipWithFallback $venvPy $pipMirror @("-e", ".") -NoBuildIsolation
     }
-    if ($LASTEXITCODE -ne 0) { throw "依赖安装失败: $name" }
+    if (-not $depsOk) { throw "依赖安装失败: $name" }
     if (-not (Test-VenvWorkerDeps $venvPy)) {
         throw "依赖自检失败（google.protobuf / grpc）: $name，请删除 $venv 后重试本脚本"
     }

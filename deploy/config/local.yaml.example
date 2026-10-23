@@ -103,6 +103,12 @@ agents:
     listen: "127.0.0.1:15065"
     enabled: true
     module: word2ppt_agent.workers.word2ppt
+  - id: enterprise_ops
+    display_name: "企业运营智囊"
+    description: "Skills 架构：SQL 经营数据、文档 OCR、财务建模、竞品联网调研与综合报告"
+    listen: "127.0.0.1:15066"
+    enabled: true
+    module: enterprise_agent.workers.enterprise_ops
 
 # Worker 生成的 PPT 与网关下载接口共用目录（相对本 yaml 所在目录）
 artifacts:
@@ -110,7 +116,11 @@ artifacts:
 
 # 文档转 PPT（word2ppt Agent，可选）
 word2ppt:
-  max_slides_per_doc: 24
+  use_llm: true              # 用大模型规划章节/要点/主题（复用上方 llm 段）
+  max_slides_total: 24       # 大纲总页数上限（页型更丰富时可略增）
+  max_source_chars: 28000    # 送入模型的文档字符上限
+  fallback_rule_layout: true # 大模型失败时回退规则排版
+  max_slides_per_doc: 24     # 仅规则排版兜底时使用
   max_bullets_per_slide: 6
   max_chars_per_bullet: 220
 
@@ -119,6 +129,15 @@ rag:
   chunk_size: 900
   chunk_overlap: 120
   top_k: 8
+
+# 企业运营智囊（enterprise_ops Agent，可选）
+enterprise_ops:
+  sql_db_path: "../../data/enterprise_demo.sqlite"  # 演示销售库（首次自动建表灌数）
+  max_skill_steps: 8
+  max_history_messages: 20
+  web_search_max_results: 5
+  scrape_max_chars: 12000
+  scrape_timeout_seconds: 25
 
 # 论文检索（paper_search Agent，可选）
 paper_search:

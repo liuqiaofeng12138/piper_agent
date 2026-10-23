@@ -26,6 +26,7 @@ declare -A EXTRAS=(
   [rag_agent]="dev"
   [paper_agent]="dev"
   [word2ppt_agent]="dev"
+  [enterprise_agent]="dev"
 )
 
 if [[ "${PIPER_PIP_NO_MIRROR:-}" == "1" ]]; then
@@ -47,14 +48,43 @@ for proj in "$ROOT"/*/pyproject.toml; do
   fi
   # shellcheck disable=SC1091
   source "$dir/.venv/bin/activate"
-  echo "  升级 pip / wheel ..."
-  pip install "${PIP_MIRROR[@]}" -U pip wheel
+  OFFICIAL_PIP=(-i "https://pypi.org/simple" --trusted-host pypi.org)
+  pip_install_fallback() {
+    local use_no_build=""
+    local args=()
+    for a in "$@"; do
+      if [[ "$a" == "--no-build-isolation" ]]; then
+        use_no_build=1
+      else
+        args+=("$a")
+      fi
+    done
+    if [[ ${#PIP_MIRROR[@]} -gt 0 ]]; then
+      if [[ -n "$use_no_build" ]]; then
+        pip install "${PIP_MIRROR[@]}" "${args[@]}" --no-build-isolation && return 0
+      else
+        pip install "${PIP_MIRROR[@]}" "${args[@]}" && return 0
+      fi
+      echo "  镜像源 pip install 失败，尝试官方 PyPI ..."
+    fi
+    if [[ -n "$use_no_build" ]]; then
+      pip install "${OFFICIAL_PIP[@]}" "${args[@]}" --no-build-isolation
+    else
+      pip install "${OFFICIAL_PIP[@]}" "${args[@]}"
+    fi
+  }
+  echo "  升级 pip ..."
+  pip_install_fallback -U pip
+  echo "  安装构建依赖 setuptools>=68 ..."
+  pip_install_fallback -U "setuptools>=68"
+  echo "  安装/升级 wheel（可选）..."
+  pip_install_fallback -U wheel || true
   extra="${EXTRAS[$name]:-}"
   echo "  安装项目依赖 ..."
   if [[ -n "$extra" ]]; then
-    pip install "${PIP_MIRROR[@]}" -e ".[$extra]"
+    pip_install_fallback -e ".[$extra]" --no-build-isolation
   else
-    pip install "${PIP_MIRROR[@]}" -e .
+    pip_install_fallback -e . --no-build-isolation
   fi
   deactivate
 done

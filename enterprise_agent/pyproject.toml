@@ -1,0 +1,29 @@
+[project]
+name = "enterprise-agent"
+version = "0.1.0"
+description = "企业运营与 BI 智囊子 Agent：Skills 架构（SQL / 文档 OCR / 财务建模 / 竞品调研）"
+requires-python = ">=3.11"
+dependencies = [
+    "grpcio>=1.60",
+    "protobuf>=4.25",
+    "pyyaml>=6.0",
+    "openai>=1.12",
+    "httpx>=0.27",
+    "duckduckgo-search>=6.0",
+    "pandas>=2.2",
+    "openpyxl>=3.1",
+    "markitdown[pdf,docx,xlsx]>=0.0.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+enterprise-agent = "enterprise_agent.workers.enterprise_ops:_cli"

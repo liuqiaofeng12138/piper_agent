@@ -1,0 +1,33 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "web_search",
+      "description": "联网搜索公开网页摘要",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string" },
+          "max_results": { "type": "integer" }
+        },
+        "required": ["query"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "scrape_webpage",
+      "description": "抓取指定 URL 正文文本",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string" }
+        },
+        "required": ["url"],
+        "additionalProperties": false
+      }
+    }
+  }
+]
