@@ -4,7 +4,6 @@ $Root = Split-Path -Parent $PSScriptRoot
 
 # 可选 pip extras：按项目目录名配置；未列出的项目仅 pip install -e .
 $ExtrasByDir = @{
-    "web_crawler_agent" = "dev,llm"
     "general_agent"     = "llm"
     "rag_agent"         = "dev"
     "paper_agent"       = "dev"

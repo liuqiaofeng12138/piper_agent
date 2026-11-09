@@ -38,7 +38,6 @@ func discoverAgentSrcDirs(repoRoot string) []string {
 
 func legacyPythonSrcDirs(repoRoot string) []string {
 	return []string{
-		filepath.Join(repoRoot, "web_crawler_agent", "src"),
 		filepath.Join(repoRoot, "general_agent", "src"),
 		filepath.Join(repoRoot, "rag_agent", "src"),
 	}

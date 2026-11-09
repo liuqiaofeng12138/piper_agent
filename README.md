@@ -17,7 +17,7 @@
 | [proto/](proto/) | IDL | gRPC / protobuf 契约 |
 | [engine/](engine/) | Go | Piper 采集内核（Go 模块名 `piper_go`：模版、分发、ES/S3） |
 | [runtime/](runtime/) | Go | Agent Runtime gRPC Server，内嵌调用 `engine` |
-| [web_crawler_agent/](web_crawler_agent/) | Python | Web 采集子 Agent：LLM Harness、工具链、`web_crawler` Worker |
+| [gateway/internal/crawlerharness/](gateway/internal/crawlerharness/) | Go | Web 采集 Harness（内嵌于 `piper-serve`，直连 Runtime） |
 | [general_agent/](general_agent/) | Python | 平台通用子 Agent Workers（`general_chat` 等，包名 `piper_agent`） |
 | [rag_agent/](rag_agent/) | Python | 文档 RAG 子 Agent（`doc_rag`，LangGraph） |
 | [paper_agent/](paper_agent/) | Python | 学术论文检索子 Agent（`paper_search`，arXiv + LangGraph） |
@@ -43,7 +43,7 @@
 powershell -File scripts/setup-python-venvs.ps1
 ```
 
-**一条命令拉起 Runtime + Agent Worker + 网关**：
+**一条命令拉起内嵌 Runtime/采集 + 其余 Python Worker + 网关**：
 
 ```powershell
 cd gateway
@@ -54,19 +54,13 @@ go run ./cmd/piper-serve -f ../deploy/config/local.yaml
 
 再开前端：`cd web && npm run dev`
 
-仅单独调试网关时仍可用 `go run ./cmd/piper-gateway`（需自行启动 Runtime 与 Worker）。
+仅单独调试网关时仍可用 `go run ./cmd/piper-gateway`（会内嵌采集 Runtime；其余 Worker 需已运行或仅用非采集 Agent）。
 
 详见 [web/README.md](web/README.md) 与 [web设计方案.md](web设计方案.md)。
 
-## 本地联调（Runtime 与依赖）
+## 本地联调（采集与依赖）
 
 1. 复制 [deploy/config/local.yaml.example](deploy/config/local.yaml.example) 为 `local.yaml`，填写 `llm.api_key`（见 [Phase C](docs/PHASE_C.md)）。
-2. 编译并启动 Runtime（需 ES/S3 等，见 [Phase B](docs/PHASE_B.md)）：
-   ```powershell
-   cd runtime
-   go build -o piper-runtime.exe ./cmd/piper-runtime
-   .\piper-runtime.exe -f ..\deploy\config\local.yaml
-   ```
-   默认 `-f` 即 `../deploy/config/local.yaml`，在 `runtime` 目录下也可省略。
+2. 采集执行依赖 `engine` 段配置的外部服务（ES/S3 等，见 [Phase B](docs/PHASE_B.md)），由 `piper-serve` **内嵌** Piper Runtime 使用，无需单独启动 `piper-runtime`。
 
-**Agent 对话请使用 Web 界面**（见上文「Web 对话」）；CLI 仅保留 `web-crawler-agent doctor` 检查 Runtime 连通性。
+**Agent 对话请使用 Web 界面**（见上文「Web 对话」）。

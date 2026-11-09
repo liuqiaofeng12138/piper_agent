@@ -1,11 +1,10 @@
 # Generate Go + Python stubs from piper_agent/proto
-# Python 输出：web_crawler_agent（全部 proto，采集链路）+ general_agent（仅 agent/v1，通用 Worker 契约）
+# Python agent/v1 输出到各 Python 子 Agent 项目（采集已迁至 gateway 内 Go Worker，不再生成 web_crawler_agent stub）
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $ProtoRoot = Join-Path $Root "proto"
 $RuntimeOut = Join-Path $Root "runtime"
 $GatewayOut = Join-Path $Root "gateway"
-$ClawPB = Join-Path $Root "web_crawler_agent\src\web_crawler_agent\pb"
 $AgentsPB = Join-Path $Root "general_agent\src\piper_agent\pb"
 $RagPB = Join-Path $Root "rag_agent\src\rag_agent\pb"
 $PaperPB = Join-Path $Root "paper_agent\src\paper_agent\pb"
@@ -13,7 +12,6 @@ $Word2PPTPB = Join-Path $Root "word2ppt_agent\src\word2ppt_agent\pb"
 $NL2SQLPB = Join-Path $Root "nl2sql_agent\src\nl2sql_agent\pb"
 
 New-Item -ItemType Directory -Force -Path (Join-Path $RuntimeOut "pkg\pb") | Out-Null
-New-Item -ItemType Directory -Force -Path $ClawPB | Out-Null
 New-Item -ItemType Directory -Force -Path $AgentsPB | Out-Null
 New-Item -ItemType Directory -Force -Path $RagPB | Out-Null
 New-Item -ItemType Directory -Force -Path $PaperPB | Out-Null
@@ -37,12 +35,6 @@ protoc `
   --go-grpc_out=$RuntimeOut --go-grpc_opt=module=piper_agent/runtime `
   $protoFiles
 
-python -m grpc_tools.protoc `
-  -I $ProtoRoot `
-  --python_out=$ClawPB `
-  --grpc_python_out=$ClawPB `
-  $protoFiles
-
 $agentProtos = @("agent/v1/execute.proto")
 $agentFiles = $agentProtos | ForEach-Object { Join-Path $ProtoRoot $_ }
 
@@ -50,13 +42,6 @@ protoc `
   -I $ProtoRoot `
   --go_out=$GatewayOut --go_opt=module=piper_agent/gateway `
   --go-grpc_out=$GatewayOut --go-grpc_opt=module=piper_agent/gateway `
-  $agentFiles
-
-# agent/v1 契约同时供 web_crawler_agent 与 general_agent 两个 Python 项目使用
-python -m grpc_tools.protoc `
-  -I $ProtoRoot `
-  --python_out=$ClawPB `
-  --grpc_python_out=$ClawPB `
   $agentFiles
 
 python -m grpc_tools.protoc `
@@ -93,4 +78,4 @@ python (Join-Path $PSScriptRoot "fix_pb_imports.py")
 
 Write-Host "Go stubs -> $RuntimeOut\pkg\pb"
 Write-Host "Go agent stubs -> $GatewayOut\pkg\pb"
-Write-Host "Python stubs -> $ClawPB, $AgentsPB (imports fixed via fix_pb_imports.py)"
+Write-Host "Python agent/v1 stubs -> general_agent, rag_agent, ... (fix_pb_imports.py)"

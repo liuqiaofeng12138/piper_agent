@@ -10,18 +10,16 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
 	"piper_agent/gateway/internal/app"
 	"piper_agent/gateway/internal/config"
+	"piper_agent/gateway/internal/integrate"
 )
 
-// RunAll 启动 Runtime、Python Worker 与 HTTP 网关（Runtime/Worker 为子进程，网关阻塞于当前进程）。
+// RunAll 内嵌 Piper Runtime + Go web_crawler，拉起其余 Python Worker 与 HTTP 网关。
 func RunAll(configPath string, gatewayListen string) error {
 	configPath = filepath.Clean(configPath)
 	absConfig, err := filepath.Abs(configPath)
@@ -33,23 +31,21 @@ func RunAll(configPath string, gatewayListen string) error {
 	if err != nil {
 		return fmt.Errorf("gateway config: %w", err)
 	}
-	runtimeListen := yamlListen(absConfig, "listen", ":50051")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	repoRoot := findRepoRoot(absConfig)
 
-	rtCmd, err := startRuntime(ctx, absConfig, repoRoot)
+	inproc, err := integrate.InprocWorkers(gwCfg, absConfig, repoRoot)
 	if err != nil {
 		return err
 	}
-	defer terminateProcess(rtCmd)
-	log.Printf("piper-runtime starting on %s", runtimeListen)
-	if err := waitTCP(runtimeListen, 180*time.Second); err != nil {
-		return fmt.Errorf("runtime not ready: %w", err)
+	var serveOpts *app.ServeOptions
+	if len(inproc) > 0 {
+		serveOpts = &app.ServeOptions{InprocWorkers: inproc}
+		log.Printf("web_crawler: in-process Go Worker + embedded Runtime (no piper-runtime / Python worker)")
 	}
-	log.Printf("piper-runtime ready at %s", runtimeListen)
 
 	var workerCmds []*exec.Cmd
 	terminateWorkers := func() {
@@ -60,6 +56,9 @@ func RunAll(configPath string, gatewayListen string) error {
 	defer terminateWorkers()
 
 	for _, agent := range gwCfg.EnabledAgents() {
+		if agent.ID == "web_crawler" {
+			continue
+		}
 		if agent.Address == "" {
 			log.Printf("agent %s enabled 但未配置 address，跳过启动", agent.ID)
 			continue
@@ -78,62 +77,18 @@ func RunAll(configPath string, gatewayListen string) error {
 
 	gwErr := make(chan error, 1)
 	go func() {
-		gwErr <- app.StartHTTP(gwCfg, gatewayListen)
+		gwErr <- app.StartHTTP(gwCfg, gatewayListen, serveOpts, absConfig, repoRoot)
 	}()
 
 	select {
 	case <-ctx.Done():
 		log.Printf("shutting down...")
 		terminateWorkers()
-		terminateProcess(rtCmd)
 		return nil
 	case err := <-gwErr:
 		terminateWorkers()
-		terminateProcess(rtCmd)
 		return fmt.Errorf("gateway exited: %w", err)
 	}
-}
-
-func startRuntime(ctx context.Context, configPath string, repoRoot string) (*exec.Cmd, error) {
-	runtimeDir := filepath.Join(repoRoot, "runtime")
-	if override := os.Getenv("PIPER_RUNTIME_CMD"); override != "" {
-		cmd := exec.CommandContext(ctx, override, "-f", configPath)
-		cmd.Dir = runtimeDir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Start(); err != nil {
-			return nil, err
-		}
-		return cmd, nil
-	}
-
-	exeName := "piper-runtime.exe"
-	if runtime.GOOS != "windows" {
-		exeName = "piper-runtime"
-	}
-	built := filepath.Join(runtimeDir, exeName)
-	useBuilt := os.Getenv("PIPER_RUNTIME_USE_BUILT") == "1" || strings.EqualFold(os.Getenv("PIPER_RUNTIME_USE_BUILT"), "true")
-	if useBuilt && fileExists(built) {
-		log.Printf("piper-runtime: using built binary %s (set PIPER_RUNTIME_USE_BUILT=0 to use go run)", built)
-		cmd := exec.CommandContext(ctx, built, "-f", configPath)
-		cmd.Dir = runtimeDir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Start(); err != nil {
-			return nil, fmt.Errorf("start %s: %w", built, err)
-		}
-		return cmd, nil
-	}
-
-	log.Printf("piper-runtime: go run ./cmd/piper-runtime (rebuild on start; PIPER_RUNTIME_USE_BUILT=1 to use %s)", exeName)
-	cmd := exec.CommandContext(ctx, "go", "run", "./cmd/piper-runtime", "-f", configPath)
-	cmd.Dir = runtimeDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("go run piper-runtime: %w", err)
-	}
-	return cmd, nil
 }
 
 func startWorker(ctx context.Context, configPath string, repoRoot string, agent config.AgentSpec) (*exec.Cmd, error) {
@@ -153,7 +108,6 @@ func startWorker(ctx context.Context, configPath string, repoRoot string, agent 
 }
 
 // workerCommand 启动 gRPC Worker（python -m <agent.Module>），不经 CLI。
-// 每个 Agent 仅使用其 python_project（或 module 推断）目录下的 .venv，不与其他 Agent 共用虚拟环境。
 func workerCommand(configPath string, repoRoot string, agent config.AgentSpec) (string, []string, []string, error) {
 	srcDirs := discoverAgentSrcDirs(repoRoot)
 	extraEnv := []string{
@@ -177,19 +131,9 @@ func workerCommand(configPath string, repoRoot string, agent config.AgentSpec) (
 	return py, moduleArgs, extraEnv, nil
 }
 
-func yamlListen(configPath string, key string, fallback string) string {
-	b, err := os.ReadFile(configPath)
-	if err != nil {
-		return fallback
-	}
-	var doc map[string]any
-	if yaml.Unmarshal(b, &doc) != nil {
-		return fallback
-	}
-	if v, ok := doc[key].(string); ok && v != "" {
-		return v
-	}
-	return fallback
+// RepoRoot 根据配置文件路径推断仓库根目录。
+func RepoRoot(configPath string) string {
+	return findRepoRoot(configPath)
 }
 
 func findRepoRoot(configPath string) string {

@@ -21,7 +21,6 @@ pip_mirror_args() {
 }
 
 declare -A EXTRAS=(
-  [web_crawler_agent]="dev,llm"
   [general_agent]="llm"
   [rag_agent]="dev"
   [paper_agent]="dev"

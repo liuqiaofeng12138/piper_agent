@@ -6,8 +6,8 @@
 
 | 路径 | 模块 |
 |------|------|
-| [cmd/piper-runtime/](cmd/piper-runtime/) | 进程入口：读配置、启 gRPC、优雅退出 |
-| [internal/grpcserver/](internal/grpcserver/) | gRPC 服务注册、拦截器（auth、logging、otel） |
+| [pkg/embed/](pkg/embed/) | 供 `piper-serve` 内嵌启动（无独立 gRPC 进程） |
+| [internal/grpcserver/](internal/grpcserver/) | gRPC 服务注册（可选独立调试；生产由 `pkg/embed` 内嵌） |
 | [internal/harness/](internal/harness/) | **执行侧 Harness**：Run 生命周期、步骤编排、与 Python Harness 的 run_id 对齐 |
 | [internal/executor/](internal/executor/) | 调用 `piper_go`：`tpl.*`、`distributor.Engine`、meta Store |
 | [internal/config/](internal/config/) | 解析 `deploy/config/local.yaml`（含 `engine:` 段） |

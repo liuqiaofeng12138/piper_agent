@@ -7,16 +7,23 @@ import (
 	"piper_agent/gateway/internal/config"
 )
 
-// Pool 维护 agent_id → WorkerClient 的连接池（多子 Agent）。
+// Pool 维护 agent_id → Worker 的连接池（多子 Agent）。
 type Pool struct {
-	clients map[string]*WorkerClient
+	clients map[string]Worker
 }
 
 // NewPool 按注册表为每个 enabled Agent 建立客户端（连接惰性建立）。
-func NewPool(agents []config.AgentSpec) *Pool {
-	p := &Pool{clients: make(map[string]*WorkerClient, len(agents))}
+func NewPool(agents []config.AgentSpec, overrides map[string]Worker) *Pool {
+	p := &Pool{clients: make(map[string]Worker, len(agents))}
 	for _, a := range agents {
-		if !a.Enabled || a.Address == "" {
+		if !a.Enabled {
+			continue
+		}
+		if w, ok := overrides[a.ID]; ok && w != nil {
+			p.clients[a.ID] = w
+			continue
+		}
+		if a.Address == "" {
 			continue
 		}
 		p.clients[a.ID] = New(a.Address)
@@ -24,8 +31,8 @@ func NewPool(agents []config.AgentSpec) *Pool {
 	return p
 }
 
-// Get 返回指定 Agent 的客户端；不存在返回 nil。
-func (p *Pool) Get(agentID string) *WorkerClient {
+// Get 返回指定 Agent 的 Worker；不存在返回 nil。
+func (p *Pool) Get(agentID string) Worker {
 	if p == nil {
 		return nil
 	}
@@ -39,6 +46,17 @@ func (p *Pool) Health(ctx context.Context, agentID string) error {
 		return errNotRegistered(agentID)
 	}
 	return c.Health(ctx)
+}
+
+// Set replaces or registers an in-process worker (e.g. embedded web_crawler).
+func (p *Pool) Set(agentID string, w Worker) {
+	if p == nil || w == nil {
+		return
+	}
+	if p.clients == nil {
+		p.clients = make(map[string]Worker)
+	}
+	p.clients[agentID] = w
 }
 
 // Close 关闭全部连接。

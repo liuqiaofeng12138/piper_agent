@@ -80,13 +80,15 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 		}
 		checks[a.ID+"_worker"] = map[string]any{"ok": workerOK, "address": a.Address, "error": workerErr}
 	}
-	runtimeOK := false
-	if s.deps.Config.RuntimeAddress != "" {
+	runtimeOK := s.deps.Config.WebCrawlerEnabled() && s.deps.Workers.Get("web_crawler") != nil
+	runtimeNote := "embedded"
+	if !runtimeOK && s.deps.Config.RuntimeAddress != "" {
 		if err := tcpReachable(s.deps.Config.RuntimeAddress, 2*time.Second); err == nil {
 			runtimeOK = true
+			runtimeNote = "grpc " + s.deps.Config.RuntimeAddress
 		}
 	}
-	checks["runtime_grpc"] = map[string]any{"ok": runtimeOK, "address": s.deps.Config.RuntimeAddress}
+	checks["runtime"] = map[string]any{"ok": runtimeOK, "mode": runtimeNote}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"status":  overall,
 		"service": "piper-gateway",
@@ -353,7 +355,7 @@ func truncateLog(s string, n int) string {
 
 func (s *Server) collectExecute(
 	ctx context.Context,
-	worker *agentclient.WorkerClient,
+	worker agentclient.Worker,
 	req *agentv1.ExecuteRequest,
 	onEvent func(*agentv1.ExecuteEvent),
 ) (string, error) {

@@ -4,7 +4,10 @@ import (
 	"flag"
 	"log"
 
+	"path/filepath"
+
 	"piper_agent/gateway/internal/app"
+	"piper_agent/gateway/internal/bootstrap"
 	"piper_agent/gateway/internal/config"
 )
 
@@ -18,7 +21,9 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	if err := app.StartHTTP(cfg, *listen); err != nil {
+	abs, _ := filepath.Abs(*configPath)
+	repoRoot := bootstrap.RepoRoot(abs)
+	if err := app.StartHTTP(cfg, *listen, nil, abs, repoRoot); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -1,6 +1,5 @@
 """Rewrite protoc-generated imports to <pkg>.pb.* (run after gen_proto).
 
-web_crawler_agent（采集链路，含 runtime/common/agent 全部 stub）→ web_crawler_agent.pb.*
 general_agent（通用 Worker，仅 agent/v1 stub）→ piper_agent.pb.*
 """
 
@@ -12,7 +11,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 TARGETS = [
-    (ROOT / "web_crawler_agent" / "src" / "web_crawler_agent" / "pb", "web_crawler_agent"),
     (ROOT / "general_agent" / "src" / "piper_agent" / "pb", "piper_agent"),
     (ROOT / "rag_agent" / "src" / "rag_agent" / "pb", "rag_agent"),
     (ROOT / "paper_agent" / "src" / "paper_agent" / "pb", "paper_agent"),

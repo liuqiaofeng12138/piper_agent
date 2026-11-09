@@ -4,10 +4,17 @@ go 1.26.0
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/sashabaranov/go-openai v1.41.2
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.60.1
+	piper_agent/runtime v0.0.0
+)
+
+replace (
+	piper_agent/runtime => ../runtime
+	piper_go => ../engine
 )
 
 require (

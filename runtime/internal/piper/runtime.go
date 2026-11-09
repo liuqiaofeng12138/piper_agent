@@ -402,3 +402,49 @@ func jsonNumber(v any) float64 {
 		return 0
 	}
 }
+
+// AwaitRun blocks until the run reaches a terminal phase and returns collected events.
+// Used by in-process harness instead of gRPC SubscribeRun.
+func (r *Runtime) AwaitRun(ctx context.Context, runID string) ([]*runtimev1.RunEvent, commonv1.RunPhase, error) {
+	if runID == "" {
+		return nil, commonv1.RunPhase_RUN_PHASE_UNSPECIFIED, status.Error(codes.InvalidArgument, "run_id is required")
+	}
+	sent := 0
+	var out []*runtimev1.RunEvent
+	for {
+		r.mu.Lock()
+		rec, ok := r.runs[runID]
+		if !ok {
+			r.mu.Unlock()
+			return nil, commonv1.RunPhase_RUN_PHASE_UNSPECIFIED, status.Error(codes.NotFound, "run not found")
+		}
+		events := rec.events
+		phase := rec.phase
+		done := rec.done
+		r.mu.Unlock()
+
+		for sent < len(events) {
+			out = append(out, events[sent])
+			sent++
+		}
+		if phase == commonv1.RunPhase_RUN_PHASE_SUCCEEDED ||
+			phase == commonv1.RunPhase_RUN_PHASE_FAILED ||
+			phase == commonv1.RunPhase_RUN_PHASE_CANCELLED {
+			return out, phase, nil
+		}
+		select {
+		case <-ctx.Done():
+			return out, phase, ctx.Err()
+		case <-done:
+			r.mu.Lock()
+			for sent < len(rec.events) {
+				out = append(out, rec.events[sent])
+				sent++
+			}
+			phase = rec.phase
+			r.mu.Unlock()
+			return out, phase, nil
+		case <-time.After(150 * time.Millisecond):
+		}
+	}
+}

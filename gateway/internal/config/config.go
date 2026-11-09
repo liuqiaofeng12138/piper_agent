@@ -76,6 +76,11 @@ func (a AgentSpec) WorkerModule() string {
 	return "piper_agent.workers." + a.ID
 }
 
+// WebCrawlerEnabled 注册表中是否启用 web_crawler（由 piper-serve 内 Go Worker 提供）。
+func (c *Config) WebCrawlerEnabled() bool {
+	return c.FindAgent("web_crawler") != nil
+}
+
 // FindAgent 按 id 查找已启用 Agent。
 func (c *Config) FindAgent(id string) *AgentSpec {
 	for i := range c.Agents {
@@ -122,10 +127,8 @@ func defaultAgents() []AgentSpec {
 			ID:          "web_crawler",
 			DisplayName: "网页采集",
 			Description: "自然语言描述采集任务，调用 Piper Runtime 执行抓取",
-			Address:     "127.0.0.1:15061",
 			Enabled:     true,
 			Default:     true,
-			Module:      "web_crawler_agent.workers.web_crawler",
 		},
 	}
 }

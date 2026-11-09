@@ -58,7 +58,7 @@ agents:
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := def.Agents[0].WorkerModule(); got != "web_crawler_agent.workers.web_crawler" {
+	if got := def.Agents[0].WorkerModule(); got != "piper_agent.workers.web_crawler" {
 		t.Fatalf("default worker module = %s", got)
 	}
 }

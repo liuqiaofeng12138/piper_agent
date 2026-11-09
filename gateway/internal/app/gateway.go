@@ -11,11 +11,21 @@ import (
 	"piper_agent/gateway/internal/config"
 	"piper_agent/gateway/internal/router"
 	"piper_agent/gateway/internal/run"
+	"piper_agent/gateway/internal/integrate"
 	"piper_agent/gateway/internal/session"
 )
 
-// StartHTTP 启动 API 网关（阻塞）。
-func StartHTTP(cfg *config.Config, listenOverride string) error {
+// StartHTTP 启动 API 网关（阻塞）。configPath/repoRoot 用于仅网关模式下的内嵌采集（与 piper-serve 相同）。
+func StartHTTP(cfg *config.Config, listenOverride string, opts *ServeOptions, configPath, repoRoot string) error {
+	if opts == nil && configPath != "" {
+		inproc, err := integrate.InprocWorkers(cfg, configPath, repoRoot)
+		if err != nil {
+			return err
+		}
+		if len(inproc) > 0 {
+			opts = &ServeOptions{InprocWorkers: inproc}
+		}
+	}
 	addr := cfg.Listen
 	if listenOverride != "" {
 		addr = listenOverride
@@ -35,7 +45,11 @@ func StartHTTP(cfg *config.Config, listenOverride string) error {
 		log.Printf("session store: sqlite %s", dbPath)
 	}
 
-	pool := agentclient.NewPool(cfg.Agents)
+	overrides := map[string]agentclient.Worker{}
+	if opts != nil && opts.InprocWorkers != nil {
+		overrides = opts.InprocWorkers
+	}
+	pool := agentclient.NewPool(cfg.Agents, overrides)
 	defer pool.Close()
 	artifactsDir, err := artifacts.ResolveDir(cfg.ConfigPath, cfg.ArtifactsDir)
 	if err != nil {
