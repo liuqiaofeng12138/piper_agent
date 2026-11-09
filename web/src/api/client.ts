@@ -1,20 +1,65 @@
 import type { AgentInfo, Conversation, HealthResponse, Message, StreamEvent } from './types'
+import { useAuthStore } from '@/stores/auth'
 
 const base = import.meta.env.VITE_API_BASE ?? '/api/v1'
+
+function mergeHeaders(init?: HeadersInit): Record<string, string> {
+  const auth = useAuthStore()
+  const out: Record<string, string> = { ...auth.authHeader() }
+  if (init instanceof Headers) {
+    init.forEach((v, k) => {
+      out[k] = v
+    })
+  } else if (Array.isArray(init)) {
+    for (const [k, v] of init) out[k] = v
+  } else if (init) {
+    Object.assign(out, init)
+  }
+  return out
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${base}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
+      ...mergeHeaders(init?.headers),
     },
   })
+  if (res.status === 401) {
+    const auth = useAuthStore()
+    auth.clearSession()
+    if (!window.location.pathname.startsWith('/login')) {
+      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`
+    }
+  }
   if (!res.ok) {
     const text = await res.text()
     throw new Error(text || res.statusText)
   }
   return res.json() as Promise<T>
+}
+
+export interface LoginResponse {
+  token: string
+  username: string
+  expires_at: string
+}
+
+export async function login(username: string, password: string): Promise<LoginResponse> {
+  const res = await fetch(`${base}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  })
+  if (!res.ok) {
+    throw new Error((await res.text()) || res.statusText)
+  }
+  return res.json() as Promise<LoginResponse>
+}
+
+export async function fetchCurrentUser(): Promise<{ username: string }> {
+  return request('/auth/me')
 }
 
 export async function healthCheck(): Promise<HealthResponse> {
@@ -41,7 +86,10 @@ export async function listMessages(conversationId: string): Promise<{ messages: 
 }
 
 export async function deleteConversation(conversationId: string): Promise<void> {
-  const res = await fetch(`${base}/conversations/${conversationId}`, { method: 'DELETE' })
+  const res = await fetch(`${base}/conversations/${conversationId}`, {
+    method: 'DELETE',
+    headers: mergeHeaders(),
+  })
   if (!res.ok) {
     throw new Error(await res.text())
   }
@@ -59,6 +107,7 @@ export async function chatStream(opts: ChatStreamOptions): Promise<void> {
   const headers: Record<string, string> = {
     Accept: 'text/event-stream',
     'Cache-Control': 'no-cache',
+    ...mergeHeaders(),
   }
   let body: BodyInit
   if (opts.files && opts.files.length > 0) {

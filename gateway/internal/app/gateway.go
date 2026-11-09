@@ -6,6 +6,7 @@ import (
 
 	"piper_agent/gateway/internal/agentclient"
 	"piper_agent/gateway/internal/api"
+	"piper_agent/gateway/internal/auth"
 	"piper_agent/gateway/internal/artifacts"
 	"piper_agent/gateway/internal/config"
 	"piper_agent/gateway/internal/router"
@@ -40,6 +41,10 @@ func StartHTTP(cfg *config.Config, listenOverride string) error {
 	if err != nil {
 		return err
 	}
+	authSvc, err := auth.New(cfg.Auth)
+	if err != nil {
+		return err
+	}
 	deps := &api.Deps{
 		Store:        store,
 		Config:       cfg,
@@ -47,16 +52,10 @@ func StartHTTP(cfg *config.Config, listenOverride string) error {
 		Workers:      pool,
 		Runs:         run.NewRegistry(),
 		ArtifactsDir: artifactsDir,
+		Auth:         authSvc,
 	}
-	handler := api.NewHandler(deps, bearerToken(cfg))
+	handler := api.NewHandler(deps)
 
-	log.Printf("piper-gateway listening on %s (agents=%d, classifier=%s)", addr, len(cfg.EnabledAgents()), cfg.Classifier.Mode)
+	log.Printf("piper-gateway listening on %s (agents=%d, classifier=%s, auth=%s)", addr, len(cfg.EnabledAgents()), cfg.Classifier.Mode, cfg.Auth.Mode)
 	return http.ListenAndServe(addr, handler)
-}
-
-func bearerToken(cfg *config.Config) string {
-	if cfg.Auth.Mode != "bearer" {
-		return ""
-	}
-	return cfg.Auth.Token
 }

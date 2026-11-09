@@ -22,11 +22,11 @@ func testRouterCfg() *config.Config {
 
 func TestResolveChatAgentStickyDocRAG(t *testing.T) {
 	store := session.NewMemoryStore()
-	c := store.CreateConversation("")
+	c := store.CreateConversation("", "")
 	_ = store.SetPreferredAgent(c.ID, "doc_rag")
 	rtr := router.New(testRouterCfg())
 
-	id, reason := resolveChatAgent(context.Background(), store, testRouterCfg(), rtr, c.ID, "继续问简历方向", 0)
+	id, reason := resolveChatAgent(context.Background(), store, testRouterCfg(), rtr, "", c.ID, "继续问简历方向", 0)
 	if id != "doc_rag" {
 		t.Fatalf("agent=%s want doc_rag", id)
 	}
@@ -37,11 +37,11 @@ func TestResolveChatAgentStickyDocRAG(t *testing.T) {
 
 func TestResolveChatAgentFromAttachmentHistory(t *testing.T) {
 	store := session.NewMemoryStore()
-	c := store.CreateConversation("")
-	_, _ = store.AppendMessage(c.ID, session.RoleUser, "总结\n\n[附件: resume.pdf]")
+	c := store.CreateConversation("", "")
+	_, _ = store.AppendMessage(c.ID, "", session.RoleUser, "总结\n\n[附件: resume.pdf]")
 	rtr := router.New(testRouterCfg())
 
-	id, _ := resolveChatAgent(context.Background(), store, testRouterCfg(), rtr, c.ID, "适合什么方向", 0)
+	id, _ := resolveChatAgent(context.Background(), store, testRouterCfg(), rtr, "", c.ID, "适合什么方向", 0)
 	if id != "doc_rag" {
 		t.Fatalf("agent=%s want doc_rag", id)
 	}

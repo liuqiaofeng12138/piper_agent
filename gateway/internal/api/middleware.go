@@ -5,7 +5,44 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
+	"piper_agent/gateway/internal/auth"
 )
+
+func isPublicAPIPath(path string) bool {
+	switch path {
+	case "/api/v1/health", "/api/v1/auth/login":
+		return true
+	default:
+		return false
+	}
+}
+
+func withAccessControl(svc *auth.Service, next http.Handler) http.Handler {
+	if svc == nil || (svc.Mode() != "login" && svc.Mode() != "bearer") {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions || isPublicAPIPath(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if !strings.HasPrefix(r.URL.Path, "/api/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		h := r.Header.Get("Authorization")
+		username, ok := svc.ValidateBearer(h)
+		if !ok {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if svc.LoginRequired() {
+			r = r.WithContext(auth.WithUser(r.Context(), username))
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,20 +77,3 @@ func withTraceID(next http.Handler) http.Handler {
 	})
 }
 
-func bearerAuth(token string, next http.Handler) http.Handler {
-	if token == "" {
-		return next
-	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v1/health" {
-			next.ServeHTTP(w, r)
-			return
-		}
-		h := r.Header.Get("Authorization")
-		if !strings.HasPrefix(h, "Bearer ") || strings.TrimPrefix(h, "Bearer ") != token {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}

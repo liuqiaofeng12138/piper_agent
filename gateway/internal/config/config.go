@@ -24,9 +24,17 @@ type Config struct {
 	Agents              []AgentSpec      `yaml:"agents"`
 }
 
+type AuthUser struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 type Auth struct {
-	Mode  string `yaml:"mode"`
-	Token string `yaml:"token"`
+	Mode          string     `yaml:"mode"` // none | bearer | login
+	Token         string     `yaml:"token"`
+	JWTSecret     string     `yaml:"jwt_secret"`
+	TokenTTLHours int        `yaml:"token_ttl_hours"`
+	Users         []AuthUser `yaml:"users"`
 }
 
 type SessionConfig struct {
@@ -125,7 +133,14 @@ func defaultAgents() []AgentSpec {
 func Load(path string) (*Config, error) {
 	cfg := &Config{
 		Listen:             ":8080",
-		Auth:               Auth{Mode: "none"},
+		Auth: Auth{
+			Mode:          "login",
+			JWTSecret:     "piper-dev-jwt-secret",
+			TokenTTLHours: 72,
+			Users: []AuthUser{
+				{Username: "admin", Password: "password"},
+			},
+		},
 		Session:            SessionConfig{Driver: "sqlite", SQLitePath: "../../data/gateway.db"},
 		Classifier:         ClassifierConfig{Mode: "rule", TimeoutMs: 4000},
 		ChatTimeoutSeconds: 600,
@@ -171,6 +186,31 @@ func Load(path string) (*Config, error) {
 			}
 			if v, ok := auth["token"].(string); ok {
 				cfg.Auth.Token = v
+			}
+			if v, ok := auth["jwt_secret"].(string); ok {
+				cfg.Auth.JWTSecret = v
+			}
+			if v, ok := intFromYAML(auth["token_ttl_hours"]); ok && v > 0 {
+				cfg.Auth.TokenTTLHours = v
+			}
+			if users, ok := auth["users"].([]any); ok {
+				cfg.Auth.Users = nil
+				for _, item := range users {
+					m, _ := item.(map[string]any)
+					if m == nil {
+						continue
+					}
+					u := AuthUser{}
+					if v, ok := m["username"].(string); ok {
+						u.Username = v
+					}
+					if v, ok := m["password"].(string); ok {
+						u.Password = v
+					}
+					if u.Username != "" {
+						cfg.Auth.Users = append(cfg.Auth.Users, u)
+					}
+				}
 			}
 		}
 		sess, _ := gw["session"].(map[string]any)

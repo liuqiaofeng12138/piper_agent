@@ -57,8 +57,12 @@ gateway:
   max_upload_body_bytes: 33554432
   rate_limit_per_minute: 60
   auth:
-    mode: none
-    token: ""
+    mode: login         # none | bearer | login
+    jwt_secret: piper-dev-jwt-secret
+    token_ttl_hours: 72
+    users:
+      - username: admin
+        password: password
   session:
     driver: sqlite
     sqlite_path: "../../data/gateway.db"

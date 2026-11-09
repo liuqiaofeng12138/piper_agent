@@ -62,29 +62,49 @@ CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, create
 		return err
 	}
 	_, _ = s.db.Exec(`ALTER TABLE conversations ADD COLUMN preferred_agent TEXT NOT NULL DEFAULT ''`)
+	_, _ = s.db.Exec(`ALTER TABLE conversations ADD COLUMN user_id TEXT NOT NULL DEFAULT ''`)
 	return nil
 }
 
-func (s *SQLiteStore) CreateConversation(title string) *Conversation {
+func (s *SQLiteStore) conversationOwned(id, userID string) bool {
+	if userID == "" {
+		return true
+	}
+	var owner string
+	err := s.db.QueryRow(`SELECT user_id FROM conversations WHERE id=?`, id).Scan(&owner)
+	return err == nil && owner == userID
+}
+
+func (s *SQLiteStore) CreateConversation(userID, title string) *Conversation {
 	now := time.Now().UTC()
 	if title == "" {
 		title = "新对话"
 	}
 	c := &Conversation{
 		ID:        "c_" + uuid.NewString(),
+		UserID:    userID,
 		Title:     title,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 	_, _ = s.db.Exec(
-		`INSERT INTO conversations(id, title, created_at, updated_at) VALUES (?,?,?,?)`,
-		c.ID, c.Title, c.CreatedAt.Format(time.RFC3339Nano), c.UpdatedAt.Format(time.RFC3339Nano),
+		`INSERT INTO conversations(id, user_id, title, created_at, updated_at) VALUES (?,?,?,?,?)`,
+		c.ID, userID, c.Title, c.CreatedAt.Format(time.RFC3339Nano), c.UpdatedAt.Format(time.RFC3339Nano),
 	)
 	return c
 }
 
-func (s *SQLiteStore) ListConversations() []*Conversation {
-	rows, err := s.db.Query(`SELECT id, title, created_at, updated_at FROM conversations ORDER BY updated_at DESC`)
+func (s *SQLiteStore) ListConversations(userID string) []*Conversation {
+	var rows *sql.Rows
+	var err error
+	if userID == "" {
+		rows, err = s.db.Query(`SELECT id, user_id, title, created_at, updated_at FROM conversations ORDER BY updated_at DESC`)
+	} else {
+		rows, err = s.db.Query(
+			`SELECT id, user_id, title, created_at, updated_at FROM conversations WHERE user_id=? ORDER BY updated_at DESC`,
+			userID,
+		)
+	}
 	if err != nil {
 		return nil
 	}
@@ -93,7 +113,7 @@ func (s *SQLiteStore) ListConversations() []*Conversation {
 	for rows.Next() {
 		var c Conversation
 		var created, updated string
-		if err := rows.Scan(&c.ID, &c.Title, &created, &updated); err != nil {
+		if err := rows.Scan(&c.ID, &c.UserID, &c.Title, &created, &updated); err != nil {
 			continue
 		}
 		c.CreatedAt, _ = time.Parse(time.RFC3339Nano, created)
@@ -103,11 +123,14 @@ func (s *SQLiteStore) ListConversations() []*Conversation {
 	return out
 }
 
-func (s *SQLiteStore) GetConversation(id string) (*Conversation, bool) {
-	row := s.db.QueryRow(`SELECT id, title, created_at, updated_at FROM conversations WHERE id=?`, id)
+func (s *SQLiteStore) GetConversation(id, userID string) (*Conversation, bool) {
+	row := s.db.QueryRow(`SELECT id, user_id, title, created_at, updated_at FROM conversations WHERE id=?`, id)
 	var c Conversation
 	var created, updated string
-	if err := row.Scan(&c.ID, &c.Title, &created, &updated); err != nil {
+	if err := row.Scan(&c.ID, &c.UserID, &c.Title, &created, &updated); err != nil {
+		return nil, false
+	}
+	if userID != "" && c.UserID != userID {
 		return nil, false
 	}
 	c.CreatedAt, _ = time.Parse(time.RFC3339Nano, created)
@@ -115,8 +138,8 @@ func (s *SQLiteStore) GetConversation(id string) (*Conversation, bool) {
 	return &c, true
 }
 
-func (s *SQLiteStore) AppendMessage(conversationID string, role Role, content string) (Message, bool) {
-	if _, ok := s.GetConversation(conversationID); !ok {
+func (s *SQLiteStore) AppendMessage(conversationID, userID string, role Role, content string) (Message, bool) {
+	if _, ok := s.GetConversation(conversationID, userID); !ok {
 		return Message{}, false
 	}
 	msg := Message{
@@ -177,7 +200,10 @@ func (s *SQLiteStore) SetPreferredAgent(conversationID string, agentID string) b
 	return n > 0
 }
 
-func (s *SQLiteStore) DeleteConversation(id string) bool {
+func (s *SQLiteStore) DeleteConversation(id, userID string) bool {
+	if !s.conversationOwned(id, userID) {
+		return false
+	}
 	res, err := s.db.Exec(`DELETE FROM conversations WHERE id=?`, id)
 	if err != nil {
 		return false
@@ -187,7 +213,10 @@ func (s *SQLiteStore) DeleteConversation(id string) bool {
 	return n > 0
 }
 
-func (s *SQLiteStore) ListMessages(conversationID string) []Message {
+func (s *SQLiteStore) ListMessages(conversationID, userID string) []Message {
+	if _, ok := s.GetConversation(conversationID, userID); !ok {
+		return nil
+	}
 	rows, err := s.db.Query(
 		`SELECT id, role, content, created_at FROM messages WHERE conversation_id=? ORDER BY created_at ASC`,
 		conversationID,

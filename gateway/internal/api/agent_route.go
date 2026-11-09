@@ -16,6 +16,7 @@ func resolveChatAgent(
 	store session.Store,
 	cfg *config.Config,
 	rtr *router.Engine,
+	userID string,
 	convID string,
 	userMessage string,
 	docCount int,
@@ -28,7 +29,7 @@ func resolveChatAgent(
 		return id, reason
 	}
 	sticky := store.GetPreferredAgent(convID)
-	if sticky == "" && cfg.FindAgent(router.AgentDocRAG) != nil && conversationHadDocumentUpload(store, convID) {
+	if sticky == "" && cfg.FindAgent(router.AgentDocRAG) != nil && conversationHadDocumentUpload(store, convID, userID) {
 		sticky = router.AgentDocRAG
 		_ = store.SetPreferredAgent(convID, sticky)
 	}
@@ -40,8 +41,8 @@ func resolveChatAgent(
 	return rtr.Classify(ctx, userMessage)
 }
 
-func conversationHadDocumentUpload(store session.Store, convID string) bool {
-	for _, m := range store.ListMessages(convID) {
+func conversationHadDocumentUpload(store session.Store, convID, userID string) bool {
+	for _, m := range store.ListMessages(convID, userID) {
 		if m.Role == session.RoleUser && strings.Contains(m.Content, "[附件:") {
 			return true
 		}

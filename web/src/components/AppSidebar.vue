@@ -2,11 +2,18 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useChatStore } from '@/stores/chat'
+import { useAuthStore } from '@/stores/auth'
 
 const emit = defineEmits<{ newChat: [] }>()
 const store = useChatStore()
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
+
+async function onLogout() {
+  auth.clearSession()
+  await router.push({ name: 'login' })
+}
 
 const conversationList = computed(() => store.conversations ?? [])
 
@@ -76,6 +83,8 @@ async function onDelete(id: string) {
       <p v-if="conversationList.length === 0" class="empty">暂无历史，发送消息开始对话</p>
     </nav>
     <footer class="sidebar-foot">
+      <span v-if="auth.username" class="user">{{ auth.username }}</span>
+      <button v-if="auth.username" type="button" class="logout" @click="onLogout">退出登录</button>
       <span class="phase">Phase W2 · 真实 Agent</span>
     </footer>
   </aside>
@@ -205,6 +214,25 @@ async function onDelete(id: string) {
   padding: 12px 8px 4px;
   border-top: 1px solid var(--ds-sidebar-border);
   margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.user {
+  font-size: 12px;
+  color: var(--ds-text-secondary);
+}
+.logout {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--ds-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+.logout:hover {
+  color: var(--ds-primary);
 }
 .phase {
   font-size: 11px;

@@ -19,6 +19,7 @@ import (
 
 	agentv1 "piper_agent/gateway/pkg/pb/agent/v1"
 	"piper_agent/gateway/internal/agentclient"
+	"piper_agent/gateway/internal/auth"
 	"piper_agent/gateway/internal/config"
 	"piper_agent/gateway/internal/router"
 	"piper_agent/gateway/internal/run"
@@ -32,6 +33,7 @@ type Deps struct {
 	Workers      *agentclient.Pool
 	Runs         *run.Registry
 	ArtifactsDir string
+	Auth         *auth.Service
 }
 
 type Server struct {
@@ -52,6 +54,7 @@ type agentInfo struct {
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
+	s.registerAuth(mux)
 	mux.HandleFunc("GET /api/v1/health", s.health)
 	mux.HandleFunc("GET /api/v1/agents", s.listAgents)
 	mux.HandleFunc("POST /api/v1/conversations", s.createConversation)
@@ -124,31 +127,35 @@ func (s *Server) createConversation(w http.ResponseWriter, r *http.Request) {
 		Title string `json:"title"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&body)
-	c := s.deps.Store.CreateConversation(body.Title)
+	userID := requestUserID(r)
+	c := s.deps.Store.CreateConversation(userID, body.Title)
 	writeJSON(w, http.StatusCreated, c)
 }
 
 func (s *Server) listConversations(w http.ResponseWriter, r *http.Request) {
+	userID := requestUserID(r)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"conversations": session.CoalesceConversations(s.deps.Store.ListConversations()),
+		"conversations": session.CoalesceConversations(s.deps.Store.ListConversations(userID)),
 	})
 }
 
 func (s *Server) listMessages(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if _, ok := s.deps.Store.GetConversation(id); !ok {
+	userID := requestUserID(r)
+	if _, ok := s.deps.Store.GetConversation(id, userID); !ok {
 		http.Error(w, "conversation not found", http.StatusNotFound)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"conversation_id": id,
-		"messages":        session.CoalesceMessages(s.deps.Store.ListMessages(id)),
+		"messages":        session.CoalesceMessages(s.deps.Store.ListMessages(id, userID)),
 	})
 }
 
 func (s *Server) deleteConversation(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if !s.deps.Store.DeleteConversation(id) {
+	userID := requestUserID(r)
+	if !s.deps.Store.DeleteConversation(id, userID) {
 		http.Error(w, "conversation not found", http.StatusNotFound)
 		return
 	}
@@ -170,11 +177,12 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := requestUserID(r)
 	convID := req.ConversationID
 	if convID == "" {
-		c := s.deps.Store.CreateConversation("")
+		c := s.deps.Store.CreateConversation(userID, "")
 		convID = c.ID
-	} else if _, ok := s.deps.Store.GetConversation(convID); !ok {
+	} else if _, ok := s.deps.Store.GetConversation(convID, userID); !ok {
 		http.Error(w, "conversation not found", http.StatusNotFound)
 		return
 	}
@@ -191,7 +199,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 			userDisplay = strings.TrimSpace(req.Message + "\n\n[附件: " + strings.Join(names, ", ") + "]")
 		}
 	}
-	_, _ = s.deps.Store.AppendMessage(convID, session.RoleUser, userDisplay)
+	_, _ = s.deps.Store.AppendMessage(convID, userID, session.RoleUser, userDisplay)
 
 	runID := "r_" + uuid.NewString()
 	traceID := traceIDFromContext(r.Context())
@@ -200,6 +208,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		s.deps.Store,
 		s.deps.Config,
 		s.deps.Router,
+		userID,
 		convID,
 		req.Message,
 		docCount,
@@ -241,7 +250,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("[chat] done trace=%s run=%s reply_len=%d", traceID, runID, len(final))
-		_, _ = s.deps.Store.AppendMessage(convID, session.RoleAssistant, final)
+		_, _ = s.deps.Store.AppendMessage(convID, userID, session.RoleAssistant, final)
 		writeJSON(w, http.StatusOK, map[string]any{
 			"conversation_id": convID,
 			"run_id":          runID,
@@ -329,7 +338,7 @@ func (s *Server) chatCompletions(w http.ResponseWriter, r *http.Request) {
 
 	final := strings.TrimSpace(assistant.String())
 	if final != "" {
-		_, _ = s.deps.Store.AppendMessage(convID, session.RoleAssistant, final)
+		_, _ = s.deps.Store.AppendMessage(convID, userID, session.RoleAssistant, final)
 	}
 	send(map[string]any{"type": "stream.end"})
 	log.Printf("[chat] done trace=%s run=%s reply_len=%d", traceID, runID, len(final))
@@ -390,7 +399,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func NewHandler(deps *Deps, authToken string) http.Handler {
+func NewHandler(deps *Deps) http.Handler {
 	srv := NewServer(deps)
 	mux := http.NewServeMux()
 	srv.Register(mux)
@@ -399,8 +408,8 @@ func NewHandler(deps *Deps, authToken string) http.Handler {
 	h = withRateLimit(deps.Config.RateLimitPerMinute, h)
 	h = withTraceID(h)
 	h = withCORS(h)
-	if authToken != "" {
-		h = bearerAuth(authToken, h)
+	if deps.Auth != nil {
+		h = withAccessControl(deps.Auth, h)
 	}
 	return h
 }

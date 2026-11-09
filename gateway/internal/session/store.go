@@ -23,9 +23,17 @@ type Message struct {
 
 type Conversation struct {
 	ID        string    `json:"id"`
+	UserID    string    `json:"user_id,omitempty"`
 	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func conversationOwned(c *Conversation, userID string) bool {
+	if userID == "" {
+		return true
+	}
+	return c.UserID == userID
 }
 
 type MemoryStore struct {
@@ -43,13 +51,14 @@ func NewMemoryStore() *MemoryStore {
 	}
 }
 
-func (s *MemoryStore) CreateConversation(title string) *Conversation {
+func (s *MemoryStore) CreateConversation(userID, title string) *Conversation {
 	now := time.Now().UTC()
 	if title == "" {
 		title = "新对话"
 	}
 	c := &Conversation{
 		ID:        "c_" + uuid.NewString(),
+		UserID:    userID,
 		Title:     title,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -61,10 +70,13 @@ func (s *MemoryStore) CreateConversation(title string) *Conversation {
 	return c
 }
 
-func (s *MemoryStore) ListConversations() []*Conversation {
+func (s *MemoryStore) ListConversations(userID string) []*Conversation {
 	s.mu.RLock()
 	out := make([]*Conversation, 0, len(s.conversations))
 	for _, c := range s.conversations {
+		if !conversationOwned(c, userID) {
+			continue
+		}
 		out = append(out, c)
 	}
 	s.mu.RUnlock()
@@ -78,17 +90,20 @@ func (s *MemoryStore) ListConversations() []*Conversation {
 	return out
 }
 
-func (s *MemoryStore) GetConversation(id string) (*Conversation, bool) {
+func (s *MemoryStore) GetConversation(id, userID string) (*Conversation, bool) {
 	s.mu.RLock()
 	c, ok := s.conversations[id]
 	s.mu.RUnlock()
-	return c, ok
+	if !ok || !conversationOwned(c, userID) {
+		return nil, false
+	}
+	return c, true
 }
 
-func (s *MemoryStore) AppendMessage(conversationID string, role Role, content string) (Message, bool) {
+func (s *MemoryStore) AppendMessage(conversationID, userID string, role Role, content string) (Message, bool) {
 	s.mu.Lock()
 	c, ok := s.conversations[conversationID]
-	if !ok {
+	if !ok || !conversationOwned(c, userID) {
 		s.mu.Unlock()
 		return Message{}, false
 	}
@@ -111,10 +126,11 @@ func (s *MemoryStore) AppendMessage(conversationID string, role Role, content st
 	return msg, true
 }
 
-func (s *MemoryStore) DeleteConversation(id string) bool {
+func (s *MemoryStore) DeleteConversation(id, userID string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if _, ok := s.conversations[id]; !ok {
+	c, ok := s.conversations[id]
+	if !ok || !conversationOwned(c, userID) {
 		return false
 	}
 	delete(s.conversations, id)
@@ -144,7 +160,10 @@ func (s *MemoryStore) SetPreferredAgent(conversationID string, agentID string) b
 	return true
 }
 
-func (s *MemoryStore) ListMessages(conversationID string) []Message {
+func (s *MemoryStore) ListMessages(conversationID, userID string) []Message {
+	if _, ok := s.GetConversation(conversationID, userID); !ok {
+		return nil
+	}
 	s.mu.RLock()
 	msgs := s.messages[conversationID]
 	if msgs == nil {
