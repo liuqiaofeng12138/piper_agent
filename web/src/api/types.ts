@@ -11,6 +11,16 @@ export interface MessageDownload {
   url: string
 }
 
+export interface NL2SQLChartSpec {
+  chartType: 'line' | 'bar' | 'table'
+  title?: string
+  xField?: string
+  yFields?: string[]
+  seriesField?: string | null
+  columns?: string[]
+  rows?: Record<string, unknown>[]
+}
+
 export interface Message {
   id: string
   role: MessageRole
@@ -20,6 +30,7 @@ export interface Message {
   steps?: MessageStep[]
   agent_id?: string
   downloads?: MessageDownload[]
+  nl2sqlChart?: NL2SQLChartSpec
 }
 
 export interface Conversation {
@@ -53,6 +64,8 @@ export type StreamEventType =
   | 'run.progress'
   | 'run.cancelled'
   | 'artifact.ready'
+  | 'query.result'
+  | 'chart.data'
   | 'error'
 
 export interface StreamEvent {

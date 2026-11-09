@@ -1,0 +1,25 @@
+[project]
+name = "nl2sql-agent"
+version = "0.1.0"
+description = "半导体制造 NL2SQL 子 Agent：类别 + SQL 模版 + PostgreSQL 查询"
+requires-python = ">=3.11"
+dependencies = [
+    "grpcio>=1.60",
+    "protobuf>=4.25",
+    "pyyaml>=6.0",
+    "psycopg2-binary>=2.9",
+    "openai>=1.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+
+[project.scripts]
+nl2sql-agent = "nl2sql_agent.workers.nl2sql:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

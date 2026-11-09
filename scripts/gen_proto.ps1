@@ -10,6 +10,7 @@ $AgentsPB = Join-Path $Root "general_agent\src\piper_agent\pb"
 $RagPB = Join-Path $Root "rag_agent\src\rag_agent\pb"
 $PaperPB = Join-Path $Root "paper_agent\src\paper_agent\pb"
 $Word2PPTPB = Join-Path $Root "word2ppt_agent\src\word2ppt_agent\pb"
+$NL2SQLPB = Join-Path $Root "nl2sql_agent\src\nl2sql_agent\pb"
 
 New-Item -ItemType Directory -Force -Path (Join-Path $RuntimeOut "pkg\pb") | Out-Null
 New-Item -ItemType Directory -Force -Path $ClawPB | Out-Null
@@ -17,6 +18,7 @@ New-Item -ItemType Directory -Force -Path $AgentsPB | Out-Null
 New-Item -ItemType Directory -Force -Path $RagPB | Out-Null
 New-Item -ItemType Directory -Force -Path $PaperPB | Out-Null
 New-Item -ItemType Directory -Force -Path $Word2PPTPB | Out-Null
+New-Item -ItemType Directory -Force -Path $NL2SQLPB | Out-Null
 
 $protos = @(
     "common/v1/types.proto",
@@ -79,6 +81,12 @@ python -m grpc_tools.protoc `
   -I $ProtoRoot `
   --python_out=$Word2PPTPB `
   --grpc_python_out=$Word2PPTPB `
+  $agentFiles
+
+python -m grpc_tools.protoc `
+  -I $ProtoRoot `
+  --python_out=$NL2SQLPB `
+  --grpc_python_out=$NL2SQLPB `
   $agentFiles
 
 python (Join-Path $PSScriptRoot "fix_pb_imports.py")

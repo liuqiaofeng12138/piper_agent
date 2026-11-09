@@ -76,6 +76,9 @@ func (e *Engine) classifyByRule(msg string) (string, string) {
 	if id := matchEnterpriseOpsKeywords(msg, e.agents); id != "" {
 		return id, "rule: 命中企业运营/BI 关键词"
 	}
+	if id := matchNL2SQLKeywords(msg, e.agents); id != "" {
+		return id, "rule: 命中 NL2SQL / 制造数据查询关键词"
+	}
 	if id := matchWord2PPTKeywords(msg, e.agents); id != "" {
 		return id, "rule: 命中 PPT 转制关键词"
 	}
@@ -162,6 +165,30 @@ func matchWord2PPTKeywords(msg string, agents []config.AgentSpec) string {
 }
 
 // matchEnterpriseOpsKeywords 命中企业运营、BI、竞品与经营分析类关键词时返回 enterprise_ops Agent。
+func matchNL2SQLKeywords(msg string, agents []config.AgentSpec) string {
+	lower := strings.ToLower(msg)
+	keywords := []string{
+		"良率", "yield", "在制品", "wip", "oee", "晶圆", "fab", "半导体",
+		"工序", "稼动", "数仓", "sql", "查询", "车规", "mcu", "pmic",
+	}
+	matched := false
+	for _, k := range keywords {
+		if strings.Contains(lower, strings.ToLower(k)) || strings.Contains(msg, k) {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return ""
+	}
+	for _, a := range agents {
+		if a.ID == AgentNL2SQL {
+			return a.ID
+		}
+	}
+	return ""
+}
+
 func matchEnterpriseOpsKeywords(msg string, agents []config.AgentSpec) string {
 	lower := strings.ToLower(msg)
 	keywords := []string{

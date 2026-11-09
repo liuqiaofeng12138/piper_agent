@@ -1,0 +1,17 @@
+services:
+  semi-postgres:
+    image: postgres:16-alpine
+    container_name: piper-semi-nl2sql-db
+    environment:
+      POSTGRES_USER: piper
+      POSTGRES_PASSWORD: piper_nl2sql
+      POSTGRES_DB: semi_dw
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U piper -d semi_dw"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

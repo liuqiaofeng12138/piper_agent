@@ -17,6 +17,7 @@ TARGETS = [
     (ROOT / "rag_agent" / "src" / "rag_agent" / "pb", "rag_agent"),
     (ROOT / "paper_agent" / "src" / "paper_agent" / "pb", "paper_agent"),
     (ROOT / "word2ppt_agent" / "src" / "word2ppt_agent" / "pb", "word2ppt_agent"),
+    (ROOT / "nl2sql_agent" / "src" / "nl2sql_agent" / "pb", "nl2sql_agent"),
 ]
 
 IMPORT_RE = [

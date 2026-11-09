@@ -1,0 +1,158 @@
+# NL2SQL 知识库：表结构、问题类别、SQL 模版（模版 id 与类别 template_id 关联）
+
+tables:
+  dim_fab:
+    description: 晶圆厂维度表
+    columns:
+      - { name: fab_id, type: varchar, description: 工厂编码，如 FAB-SH }
+      - { name: fab_name, type: varchar, description: 工厂名称，如 上海 Fab12 }
+      - { name: region, type: varchar, description: 区域（华东/西南等） }
+      - { name: node_cap_nm, type: int, description: 工厂可支持的最细工艺节点（nm） }
+
+  dim_product:
+    description: 产品维度表
+    columns:
+      - { name: product_id, type: varchar, description: 产品编码 }
+      - { name: product_name, type: varchar, description: 产品名称，如 N28 车规 MCU }
+      - { name: node_nm, type: int, description: 工艺节点（nm） }
+      - { name: category, type: varchar, description: 品类 MCU/PMIC/AI/RF }
+      - { name: customer, type: varchar, description: 主要客户 }
+
+  fact_yield_daily:
+    description: 按日、产品、工厂汇总的良率事实表
+    columns:
+      - { name: stat_date, type: date, description: 统计日期 }
+      - { name: product_id, type: varchar, description: 产品编码，关联 dim_product }
+      - { name: fab_id, type: varchar, description: 工厂编码，关联 dim_fab }
+      - { name: good_die, type: bigint, description: 合格 die 数 }
+      - { name: total_die, type: bigint, description: 投入 die 总数 }
+      - { name: yield_pct, type: numeric, description: 良率百分比（0-100） }
+
+  fact_wip_lot:
+    description: 在制品批次快照
+    columns:
+      - { name: lot_id, type: varchar, description: 批次号 }
+      - { name: product_id, type: varchar, description: 产品编码 }
+      - { name: fab_id, type: varchar, description: 工厂编码 }
+      - { name: stage, type: varchar, description: 当前工序（光刻/蚀刻/CMP 等） }
+      - { name: qty_wafers, type: int, description: 片数 }
+      - { name: updated_at, type: timestamp, description: 更新时间 }
+
+  fact_equipment_oee:
+    description: 设备 OEE 日指标
+    columns:
+      - { name: stat_date, type: date, description: 统计日期 }
+      - { name: equipment_id, type: varchar, description: 设备编号 }
+      - { name: fab_id, type: varchar, description: 工厂编码 }
+      - { name: oee_pct, type: numeric, description: OEE 百分比 }
+      - { name: uptime_hours, type: numeric, description: 当日运行小时数 }
+
+categories:
+  - id: cat_yield_trend
+    name: 产品良率趋势
+    description: 查询某产品在近 N 天/近一月的日良率走势，可按工厂过滤
+    template_id: tpl_yield_daily_trend
+    keywords: [良率, yield, 通过率, 产出率]
+    chart: line
+
+  - id: cat_yield_by_fab
+    name: 多工厂良率对比
+    description: 同一产品在不同 fab 的良率对比（通常看最近一日或区间平均）
+    template_id: tpl_yield_compare_fab
+    keywords: [对比, 工厂, fab, 各厂]
+    chart: bar
+
+  - id: cat_wip_stage
+    name: 在制品工序分布
+    description: 某产品当前 WIP 在各工序的片数分布
+    template_id: tpl_wip_by_stage
+    keywords: [在制品, wip, 工序, 片数, 批次]
+    chart: bar
+
+  - id: cat_oee_trend
+    name: 设备 OEE 趋势
+    description: 某工厂关键设备近 N 天 OEE 走势
+    template_id: tpl_oee_daily_trend
+    keywords: [oee, 设备, 稼动, 利用率]
+    chart: line
+
+  - id: cat_product_search
+    name: 产品清单检索
+    description: 按名称模糊查产品列表及节点、品类
+    template_id: tpl_product_list
+    keywords: [有哪些产品, 产品列表, 查产品]
+    chart: table
+
+templates:
+  - id: tpl_yield_daily_trend
+    category_id: cat_yield_trend
+    description: |
+      按日输出良率。占位符：{{days}} 天数（默认 30），{{product_name}} 产品名称模糊匹配，
+      {{fab_name}} 可选工厂名称模糊匹配（空则不限工厂）。
+    sql: |
+      SELECT y.stat_date,
+             p.product_name,
+             f.fab_name,
+             y.yield_pct,
+             y.good_die,
+             y.total_die
+      FROM fact_yield_daily y
+      JOIN dim_product p ON p.product_id = y.product_id
+      JOIN dim_fab f ON f.fab_id = y.fab_id
+      WHERE y.stat_date >= CURRENT_DATE - INTERVAL '{{days}} days'
+        AND p.product_name ILIKE '%' || {{product_name}} || '%'
+        {{fab_filter}}
+      ORDER BY y.stat_date ASC, f.fab_name;
+
+  - id: tpl_yield_compare_fab
+    category_id: cat_yield_by_fab
+    description: 最近一日各工厂良率对比；占位符 {{product_name}}
+    sql: |
+      SELECT f.fab_name,
+             AVG(y.yield_pct) AS avg_yield_pct,
+             MAX(y.stat_date) AS latest_date
+      FROM fact_yield_daily y
+      JOIN dim_product p ON p.product_id = y.product_id
+      JOIN dim_fab f ON f.fab_id = y.fab_id
+      WHERE p.product_name ILIKE '%' || {{product_name}} || '%'
+        AND y.stat_date >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY f.fab_name
+      ORDER BY avg_yield_pct DESC;
+
+  - id: tpl_wip_by_stage
+    category_id: cat_wip_stage
+    description: WIP 按工序汇总；占位符 {{product_name}}
+    sql: |
+      SELECT w.stage,
+             SUM(w.qty_wafers) AS total_wafers,
+             COUNT(*) AS lot_count
+      FROM fact_wip_lot w
+      JOIN dim_product p ON p.product_id = w.product_id
+      WHERE p.product_name ILIKE '%' || {{product_name}} || '%'
+      GROUP BY w.stage
+      ORDER BY total_wafers DESC;
+
+  - id: tpl_oee_daily_trend
+    category_id: cat_oee_trend
+    description: 工厂 OEE 日趋势；占位符 {{days}}、{{fab_name}}
+    sql: |
+      SELECT o.stat_date,
+             o.equipment_id,
+             o.oee_pct,
+             o.uptime_hours
+      FROM fact_equipment_oee o
+      JOIN dim_fab f ON f.fab_id = o.fab_id
+      WHERE o.stat_date >= CURRENT_DATE - INTERVAL '{{days}} days'
+        AND f.fab_name ILIKE '%' || {{fab_name}} || '%'
+      ORDER BY o.stat_date ASC, o.equipment_id;
+
+  - id: tpl_product_list
+    category_id: cat_product_search
+    description: 产品模糊检索；占位符 {{keyword}}（可为空表示全部）
+    sql: |
+      SELECT product_id, product_name, node_nm, category, customer
+      FROM dim_product
+      WHERE product_name ILIKE '%' || {{keyword}} || '%'
+         OR category ILIKE '%' || {{keyword}} || '%'
+      ORDER BY node_nm, product_name
+      LIMIT 50;

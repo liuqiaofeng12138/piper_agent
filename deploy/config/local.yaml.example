@@ -109,6 +109,18 @@ agents:
     listen: "127.0.0.1:15066"
     enabled: true
     module: enterprise_agent.workers.enterprise_ops
+  - id: nl2sql
+    display_name: "半导体 NL2SQL"
+    description: "自然语言查询半导体演示数仓（良率/WIP/OEE），模版化 SQL + 图表解读"
+    listen: "127.0.0.1:15067"
+    enabled: true
+    module: nl2sql_agent.workers.nl2sql
+
+# NL2SQL（nl2sql Agent，需先 docker compose 启动 PostgreSQL，见 nl2sql_agent/README.md）
+nl2sql:
+  dsn: "postgresql://piper:piper_nl2sql@127.0.0.1:5433/semi_dw"
+  use_llm_extract: false
+  use_llm_explain: true
 
 # Worker 生成的 PPT 与网关下载接口共用目录（相对本 yaml 所在目录）
 artifacts:

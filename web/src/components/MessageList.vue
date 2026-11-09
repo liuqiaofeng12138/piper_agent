@@ -2,7 +2,9 @@
 import { computed } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import type { Message } from '@/api/types'
+import QueryChart from '@/components/QueryChart.vue'
 import { renderMarkdown } from '@/utils/markdown'
+import { parseNL2SQLPayload } from '@/utils/nl2sql'
 
 defineProps<{
   messages: Message[]
@@ -15,6 +17,15 @@ const agentNames = computed(() => {
   for (const a of store.agents) map[a.id] = a.display_name
   return map
 })
+
+function assistantView(msg: Message) {
+  const parsed = parseNL2SQLPayload(msg.content || '')
+  const chart = msg.nl2sqlChart ?? parsed.payload?.chart
+  return {
+    markdown: renderMarkdown(parsed.markdown),
+    chart: chart ?? null,
+  }
+}
 </script>
 
 <template>
@@ -67,10 +78,14 @@ const agentNames = computed(() => {
                 下载 {{ dl.filename }}
               </a>
             </div>
+            <QueryChart
+              v-if="assistantView(msg).chart"
+              :spec="assistantView(msg).chart!"
+            />
             <div
-              v-if="msg.content"
+              v-if="msg.content && assistantView(msg).markdown"
               class="md-body"
-              v-html="renderMarkdown(msg.content)"
+              v-html="assistantView(msg).markdown"
             />
             <span v-else-if="msg.streaming" class="typing">正在思考</span>
             <span v-if="msg.streaming && msg.content" class="cursor">▍</span>

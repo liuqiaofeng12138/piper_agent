@@ -21,6 +21,7 @@
 | [general_agent/](general_agent/) | Python | 平台通用子 Agent Workers（`general_chat` 等，包名 `piper_agent`） |
 | [rag_agent/](rag_agent/) | Python | 文档 RAG 子 Agent（`doc_rag`，LangGraph） |
 | [paper_agent/](paper_agent/) | Python | 学术论文检索子 Agent（`paper_search`，arXiv + LangGraph） |
+| [nl2sql_agent/](nl2sql_agent/) | Python | 半导体 NL2SQL（模版化 SQL + PostgreSQL + 前端图表） |
 | [gateway/](gateway/) | Go | Web API 网关（SSE 对话、会话，Phase W1+） |
 | [web/](web/) | Vue + TS | 对话前端 |
 | [shared/](shared/) | 中性 | JSON Schema、示例模版、Prompt 片段 |

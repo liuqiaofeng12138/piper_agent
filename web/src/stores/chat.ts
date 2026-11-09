@@ -9,7 +9,14 @@ import {
   listConversations,
   listMessages,
 } from '@/api/client'
-import type { AgentInfo, Conversation, HealthResponse, Message, StreamEvent } from '@/api/types'
+import type {
+  AgentInfo,
+  Conversation,
+  HealthResponse,
+  Message,
+  NL2SQLChartSpec,
+  StreamEvent,
+} from '@/api/types'
 
 export const useChatStore = defineStore('chat', () => {
   const conversations = ref<Conversation[]>([])
@@ -151,6 +158,17 @@ export const useChatStore = defineStore('chat', () => {
       }
       if (ev.type === 'message.done' && ev.content) {
         next.content = ev.content
+        if (!next.nl2sqlChart && ev.content.includes('piper-nl2sql-data:')) {
+          try {
+            const m = ev.content.match(/<!--\s*piper-nl2sql-data:(.+?)\s*-->/s)
+            if (m) {
+              const payload = JSON.parse(m[1]) as { chart?: NL2SQLChartSpec }
+              if (payload.chart) next.nl2sqlChart = payload.chart
+            }
+          } catch {
+            /* ignore */
+          }
+        }
       }
       if (ev.type === 'tool.call') {
         next.steps = [
@@ -171,6 +189,38 @@ export const useChatStore = defineStore('chat', () => {
             text: ev.message || '',
           },
         ]
+      }
+      if (ev.type === 'chart.data' && ev.tool_detail) {
+        try {
+          const spec = JSON.parse(ev.tool_detail) as NL2SQLChartSpec
+          next.nl2sqlChart = spec
+        } catch {
+          /* ignore malformed chart payload */
+        }
+      }
+      if (ev.type === 'query.result' && ev.tool_detail) {
+        try {
+          const parsed = JSON.parse(ev.tool_detail) as {
+            columns?: string[]
+            rows?: unknown[][]
+          }
+          if (parsed.columns && parsed.rows && !next.nl2sqlChart) {
+            next.nl2sqlChart = {
+              chartType: 'table',
+              title: '查询结果',
+              columns: parsed.columns,
+              rows: parsed.rows.map((row) => {
+                const obj: Record<string, unknown> = {}
+                parsed.columns!.forEach((c, i) => {
+                  obj[c] = row[i]
+                })
+                return obj
+              }),
+            }
+          }
+        } catch {
+          /* ignore */
+        }
       }
       if (ev.type === 'artifact.ready' && ev.download_url) {
         const downloads = [...(next.downloads ?? [])]

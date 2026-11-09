@@ -10,6 +10,7 @@ $ExtrasByDir = @{
     "paper_agent"       = "dev"
     "word2ppt_agent"    = "dev"
     "enterprise_agent"  = "dev"
+    "nl2sql_agent"      = "dev"
 }
 
 # 国内 PyPI 镜像（默认清华）。覆盖方式：
