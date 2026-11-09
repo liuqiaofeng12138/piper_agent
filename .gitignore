@@ -20,6 +20,10 @@
 # Gateway session DB
 /data/
 
+# Piper engine 本地运行时状态（Chrome/HTTP Agent、meta SQLite）
+/engine/etc/db/agents_info.json
+/engine/etc/db/raw_meta.db
+
 # IDE
 .idea/
 .vscode/
